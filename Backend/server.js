@@ -1,8 +1,15 @@
 import db from './src/config/db.js';
+import express from 'express';
 
-try {
-    await db.authenticate();
-    console.log('Database connection has been established successfully.');
-} catch (error) {
-    console.error('Unable to connect to the database:', error);
-}
+import login from './src/routes/authLogin.js';
+import create from './src/routes/UserRoute.js';
+
+const app = express();
+app.use(express.json());
+
+app.use("/api/auth", login);
+app.use("/api/user", create);
+
+app.listen(3000, () => {
+  console.log('Server is running on port 3000');
+});
