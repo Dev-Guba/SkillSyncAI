@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useAuth } from "../../context/AuthContext.jsx"
+import { useAuth } from "../../context/AuthContext.jsx";
 import {
   User,
   Lock,
-  Hash,
   Eye,
   EyeOff,
   ArrowRight,
+  AlertCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -36,62 +36,84 @@ const item = {
 
 export default function RegisterForm() {
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { register } = useAuth();
   const [formData, setFormData] = useState({
     username: "",
     password: "",
     confirmPassword: "",
     role_id: 3,
   });
-  const handleChange = (e) => {
-  const { name, value } = e.target;
 
-  setFormData((prev) => ({
-    ...prev,
-    [name]: value,
-  }));
-};
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    if (errors[name] || errors.form) {
+      setErrors((prev) => ({ ...prev, [name]: undefined, form: undefined }));
+    }
+  };
+
+  const validate = () => {
+    const nextErrors = {};
+
+    if (!formData.username.trim()) {
+      nextErrors.username = "Username is required.";
+    } else if (formData.username.trim().length < 3) {
+      nextErrors.username = "Username must be at least 3 characters.";
+    }
+
+    if (!formData.password.trim()) {
+      nextErrors.password = "Password is required.";
+    } else if (formData.password.length < 8) {
+      nextErrors.password = "Password must be at least 8 characters.";
+    }
+
+    if (!formData.confirmPassword.trim()) {
+      nextErrors.confirmPassword = "Please confirm your password.";
+    } else if (formData.password !== formData.confirmPassword) {
+      nextErrors.confirmPassword = "Passwords do not match.";
+    }
+
+    return nextErrors;
+  };
 
   const handleContinue = async (e) => {
     e.preventDefault();
 
+    const nextErrors = validate();
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+
     setErrors({});
-
-    if (!formData.username.trim()) {
-        return setErrors({
-            username: "Username is required.",
-        });
-    }
-
-    if (!formData.password.trim()) {
-        return setErrors({
-            password: "Password is required.",
-        });
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-        return setErrors({
-            confirmPassword: "Passwords do not match.",
-        });
-    }
+    setIsSubmitting(true);
 
     try {
-        const { confirmPassword, ...payload } = formData;
+      const { confirmPassword, ...payload } = formData;
 
-        await register(payload);
+      await register(payload);
 
-        navigate("/profile-setup");
+      navigate("/profile-setup");
     } catch (error) {
-        alert(
-            error.response?.data?.message ||
-            "Failed to create account."
-        );
+      setErrors({
+        form:
+          error.response?.data?.message || "Failed to create account.",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-};
+  };
 
   return (
     <motion.form
@@ -100,11 +122,21 @@ export default function RegisterForm() {
       animate="show"
       onSubmit={handleContinue}
       className="mt-10 space-y-5"
+      noValidate
     >
-      {/* Username */}
+      {errors.form && (
+        <motion.div
+          variants={item}
+          className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
+        >
+          <AlertCircle size={16} className="shrink-0" />
+          <span>{errors.form}</span>
+        </motion.div>
+      )}
 
+      {/* Username */}
       <motion.div variants={item}>
-         <Input
+        <Input
           label="Username"
           name="username"
           type="text"
@@ -112,35 +144,48 @@ export default function RegisterForm() {
           icon={User}
           value={formData.username}
           onChange={handleChange}
+          error={errors.username}
+          autoComplete="username"
         />
+        {errors.username && (
+          <p className="mt-1.5 text-sm text-red-500">{errors.username}</p>
+        )}
       </motion.div>
 
       {/* Password */}
-
       <motion.div variants={item}>
         <div className="relative">
-         <Input
-          label="Password"
-          name="password"
-          type={showPassword ? "text" : "password"}
-          placeholder="Create a password"
-          icon={Lock}
-          value={formData.password}
-          onChange={handleChange}
-        />
+          <Input
+            label="Password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            placeholder="Create a password"
+            icon={Lock}
+            value={formData.password}
+            onChange={handleChange}
+            error={errors.password}
+            autoComplete="new-password"
+          />
 
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-[42px] text-muted hover:text-[#5B4BFF]"
+            className="absolute right-4 top-[42px] text-muted transition-colors hover:text-primary"
+            aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         </div>
+        {errors.password ? (
+          <p className="mt-1.5 text-sm text-red-500">{errors.password}</p>
+        ) : (
+          <p className="mt-1.5 text-sm text-muted">
+            Must be at least 8 characters.
+          </p>
+        )}
       </motion.div>
 
       {/* Confirm Password */}
-
       <motion.div variants={item}>
         <div className="relative">
           <Input
@@ -152,37 +197,35 @@ export default function RegisterForm() {
             value={formData.confirmPassword}
             onChange={handleChange}
             error={errors.confirmPassword}
+            autoComplete="new-password"
           />
-          {errors.confirmPassword && (
-            <p className="mt-1 text-sm text-red-500">
-              {errors.confirmPassword}
-            </p>
-          )}
           <button
             type="button"
-            onClick={() =>
-              setShowConfirmPassword(!showConfirmPassword)
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            className="absolute right-4 top-[42px] text-muted transition-colors hover:text-primary"
+            aria-label={
+              showConfirmPassword ? "Hide password" : "Show password"
             }
-            className="absolute right-4 top-[42px] text-muted hover:text-[#5B4BFF]"
           >
-            {showConfirmPassword ? (
-              <EyeOff size={18} />
-            ) : (
-              <Eye size={18} />
-            )}
+            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         </div>
+        {errors.confirmPassword && (
+          <p className="mt-1.5 text-sm text-red-500">
+            {errors.confirmPassword}
+          </p>
+        )}
       </motion.div>
 
       {/* Continue */}
-
       <motion.div variants={item}>
         <Button
           type="submit"
           className="w-full py-3"
           icon={ArrowRight}
+          disabled={isSubmitting}
         >
-          Continue
+          {isSubmitting ? "Creating account..." : "Continue"}
         </Button>
       </motion.div>
     </motion.form>
