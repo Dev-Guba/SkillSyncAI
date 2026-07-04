@@ -103,10 +103,13 @@ export default function SkillsPage() {
         <div className="mb-10 flex flex-col items-center">
           <img src={logo} alt="SkillSyncAI" className="mb-4 h-14 w-14 object-contain" />
 
-          <div className="mb-6 flex items-center gap-2">
-            <span className="h-2 w-8 rounded-full bg-border" />
-            <span className="h-2 w-8 rounded-full bg-linear-to-r from-[#5B4BFF] to-[#7A5CFF]" />
-          </div>
+<p className="text-sm font-semibold text-primary">
+  Step 3 of 3
+</p>
+
+<div className="mt-3 h-2 overflow-hidden rounded-full bg-border">
+  <div className="h-full w-full rounded-full bg-gradient-to-r from-[#5B4BFF] to-[#7A5CFF]" />
+</div>
 
           <h1 className="text-center text-3xl font-bold text-ink sm:text-4xl">
             What are your skills & interests?
@@ -158,13 +161,6 @@ export default function SkillsPage() {
           </p>
 
           <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => navigate("/dashboard")}
-              className="rounded-lg text-sm font-medium text-muted outline-none transition hover:text-ink focus-visible:ring-2 focus-visible:ring-[#5B4BFF] focus-visible:ring-offset-2"
-            >
-              Skip for now
-            </button>
 
             <motion.button
               type="button"
@@ -174,7 +170,7 @@ export default function SkillsPage() {
               onClick={handleContinue}
               className="flex h-12 items-center gap-2 rounded-2xl bg-linear-to-r from-[#5B4BFF] to-[#7A5CFF] px-6 font-semibold text-white shadow-[0_15px_40px_rgba(91,75,255,.35)] outline-none transition focus-visible:ring-2 focus-visible:ring-[#5B4BFF] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Continue
+              Finish Setup
               <ArrowRight className="h-4 w-4" />
             </motion.button>
           </div>
