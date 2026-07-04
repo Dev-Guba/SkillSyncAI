@@ -7,9 +7,17 @@ const UserProfile = sequelize.define("UserProfile", {
     primaryKey: true,
     autoIncrement: true,
   },
-  user_id: DataTypes.INTEGER,
+  user_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
   first_name: DataTypes.STRING,
   last_name: DataTypes.STRING,
+  email: {
+    type: DataTypes.STRING(100),
+    allowNull: false,
+    unique: true
+  },
   phone_number: DataTypes.STRING,
   birth_date: DataTypes.DATE,
   gender: DataTypes.ENUM("Male", "Female", "Other"),
