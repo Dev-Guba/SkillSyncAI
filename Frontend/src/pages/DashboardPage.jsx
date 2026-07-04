@@ -1,7 +1,7 @@
 export default function DashboardPage() {
   return (
-    <section className="flex min-h-screen items-center justify-center">
-      <h1 className="text-4xl font-bold">Dashboard</h1>
+    <section className="flex h-full min-h-[60vh] items-center justify-center px-4 py-10">
+      <p className="text-muted">Nothing here yet.</p>
     </section>
   );
 }
