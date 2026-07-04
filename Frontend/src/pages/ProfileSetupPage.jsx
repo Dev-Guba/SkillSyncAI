@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { API } from "../api/api.js";
 
 import Input from "../components/common/Input";
 import Select from "../components/common/Select";
@@ -12,7 +13,7 @@ import logo from "../assets/logos/logo.png";
 const GENDER_OPTIONS = [
   { value: "Male", label: "Male" },
   { value: "Female", label: "Female" },
-  { value: "Prefer not to say", label: "Prefer not to say" },
+  { value: "Other", label: "Other" },
 ];
 
 export default function ProfileSetupPage() {
@@ -22,7 +23,7 @@ export default function ProfileSetupPage() {
     first_name: "",
     last_name: "",
     email: "",
-    phone: "",
+    phone_number: "",
     birth_date: "",
     gender: "",
     location: "",
@@ -35,12 +36,31 @@ export default function ProfileSetupPage() {
       [field]: e.target.value,
     }));
 
-  const handleContinue = () => {
-    // TODO
-    // Save profile
+  const handleContinue = async () => {
+    if (!form.first_name.trim()) {
+      return alert("First name is required.");
+    }
 
-    navigate("/skills");
-  };
+    if (!form.last_name.trim()) {
+      return alert("Last name is required.");
+    }
+
+    if (!form.email.trim()) {
+      return alert("Email is required.");
+    }
+
+    try {
+      console.log(form);
+      await API.createUserProfile(form);
+
+      navigate("/skills");
+    } catch (error) {
+      alert(
+        error.response?.data?.message ||
+        "Failed to save profile."
+      );
+    }
+};
 
   return (
     <section className="min-h-screen bg-white dark:bg-surface">
@@ -140,8 +160,8 @@ export default function ProfileSetupPage() {
 
             <Input
               label="Phone Number"
-              value={form.phone}
-              onChange={handleChange("phone")}
+              value={form.phone_number}
+              onChange={handleChange("phone_number")}
             />
 
           </div>
@@ -150,6 +170,7 @@ export default function ProfileSetupPage() {
 
             <Input
               label="Birth Date"
+              name="birth_date"
               type="date"
               value={form.birth_date}
               onChange={handleChange("birth_date")}
@@ -158,7 +179,14 @@ export default function ProfileSetupPage() {
             <Select
               label="Gender"
               value={form.gender}
-              onChange={handleChange("gender")}
+              onChange={(e) => {
+                console.log("Gender selected:", e.target.value);
+
+                setForm((prev) => ({
+                  ...prev,
+                  gender: e.target.value,
+                }));
+              }}
               options={GENDER_OPTIONS}
             />
 

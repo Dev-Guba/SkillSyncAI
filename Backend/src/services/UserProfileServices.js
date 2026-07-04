@@ -18,6 +18,7 @@ export async function createUserProfile(user_id, first_name, last_name, email, p
     }
     catch (error) {
         console.error("Error creating user profile:", error);
+        console.log(req.body);
         throw error;
     }
 }
