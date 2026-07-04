@@ -1,4 +1,7 @@
-import { createUser } from "../services/UserServices.js";
+import { 
+    createUser,
+    getSelfUser
+ } from "../services/UserServices.js";
 import User from "../model/User.js";
 import Role from "../model/Role.js";
 
@@ -25,5 +28,31 @@ export async function createUserController(req, res) {
     } catch (error) {
         console.error("Error creating user:", error);
         res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export async function getMe(req,res){
+try{
+    const user_id = req.user.user_id;
+
+    const user = await getSelfUser(user_id);
+
+    if(!user){
+        return res.status(404).json({
+            success: false,
+            message: "User not found",
+        });
+    }
+    return res.json({
+            success: true,
+            user
+        });
+    }
+    catch(error){
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch user"
+        });
     }
 }

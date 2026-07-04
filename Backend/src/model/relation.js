@@ -5,6 +5,8 @@ import SkillSet from "./SkillSet.js";
 import JobTitle from "./JobTitle.js";
 import JobTitleSkill from "./JobTitleSkill.js";
 import UserSkill from "./UserSkill.js";
+import UserInterest from "./UserInterest.js";
+import Interests from "./Interests.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -70,6 +72,24 @@ SkillSet.belongsToMany(JobTitle, {
   otherKey: "job_title_id",
 });
 
+/*
+|--------------------------------------------------------------------------
+| User <-> Interest (Many-to-Many)
+|--------------------------------------------------------------------------
+*/
+
+User.belongsToMany(Interests, {
+  through: UserInterest,
+  foreignKey: "user_id",
+  otherKey: "interest_id",
+});
+
+Interests.belongsToMany(User, {
+  through: UserInterest,
+  foreignKey: "interest_id",
+  otherKey: "user_id",
+});
+
 export {
   Role,
   User,
@@ -78,4 +98,6 @@ export {
   JobTitle,
   JobTitleSkill,
   UserSkill,
+  Interests,
+  UserInterest,
 };
