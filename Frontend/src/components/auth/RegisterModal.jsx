@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   X,
   User,
+  Hash,
   Mail,
   Lock,
   Eye,
@@ -11,15 +12,42 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/logos/logo.png";
+import { useAuth } from "../../context/AuthContext";
 
 export default function RegisterModal({ open, onClose }) {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { register } = useAuth();
 
-  const handleCreateAccount = () => {
-    // TODO: replace with the real register API call
-    onClose();
-    navigate("/skills");
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+    role_id: 3,
+  });
+
+  const handleCreateAccount = async () => {
+    try {
+      await register(formData);
+
+      onClose();
+      navigate("/user-profile");
+    } catch (error) {
+      console.error(error);
+
+      alert(
+        error.response?.data?.message ||
+        "Failed to create account."
+      );
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   useEffect(() => {
@@ -104,41 +132,45 @@ export default function RegisterModal({ open, onClose }) {
             </div>
 
             {/* Name */}
+            {/* User ID */}
 
-            <div className="mb-5">
-              <label className="mb-2 block text-sm font-medium">
-                Full Name
-              </label>
+          <div className="mb-5">
+            <label className="mb-2 block text-sm font-medium">
+              User Label as: 
+            </label>
 
-              <div className="flex h-14 items-center rounded-2xl border border-border px-4 transition focus-within:border-[#5B4BFF] focus-within:ring-4 focus-within:ring-violet-100">
-                <User className="mr-3 h-5 w-5 text-muted" />
+            <div className="flex h-14 items-center rounded-2xl border border-border bg-surface-alt px-4">
+              <Hash className="mr-3 h-5 w-5 text-muted" />
 
-                <input
-                  type="text"
-                  placeholder="Enter your full name"
-                  className="w-full bg-transparent outline-none"
-                />
-              </div>
+              <input
+                type="text"
+                value="Student"
+                readOnly
+                className="w-full bg-transparent text-muted outline-none cursor-not-allowed"
+              />
             </div>
+          </div>
 
-            {/* Email */}
+            {/* Username */}
 
-            <div className="mb-5">
-              <label className="mb-2 block text-sm font-medium">
-                Email
-              </label>
+          <div className="mb-5">
+            <label className="mb-2 block text-sm font-medium">
+              Username
+            </label>
 
-              <div className="flex h-14 items-center rounded-2xl border border-border px-4 transition focus-within:border-[#5B4BFF] focus-within:ring-4 focus-within:ring-violet-100">
-                <Mail className="mr-3 h-5 w-5 text-muted" />
+            <div className="flex h-14 items-center rounded-2xl border border-border px-4 transition focus-within:border-[#5B4BFF] focus-within:ring-4 focus-within:ring-violet-100">
+              <User className="mr-3 h-5 w-5 text-muted" />
 
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  className="w-full bg-transparent outline-none"
-                />
-              </div>
+              <input
+              type="text"
+              name="username"
+              placeholder="Enter your username"
+              value={formData.username}
+              onChange={handleChange}
+              className="w-full bg-transparent outline-none"
+            />
             </div>
-
+          </div>
             {/* Password */}
 
             <div>
@@ -151,7 +183,10 @@ export default function RegisterModal({ open, onClose }) {
 
                 <input
                   type={showPassword ? "text" : "password"}
+                  name="password"
                   placeholder="Create a password"
+                  value={formData.password}
+                  onChange={handleChange}
                   className="w-full bg-transparent outline-none"
                 />
 

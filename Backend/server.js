@@ -1,5 +1,6 @@
 import db from './src/config/db.js';
 import express from 'express';
+import cors from 'cors';
 
 import login from './src/routes/authLogin.js';
 import create from './src/routes/UserRoute.js';
@@ -8,6 +9,14 @@ import skills from './src/routes/SkillSetRoute.js';
 import userSkills from './src/routes/UserSkills.js';
 
 const app = express();
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    exposedHeaders: ["Content-Disposition"],
+  })
+);
 app.use(express.json());
 
 app.use("/api/auth", login);
