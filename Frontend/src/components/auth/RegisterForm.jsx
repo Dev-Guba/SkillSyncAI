@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useAuth } from "../../context/AuthContext.jsx"
 import {
   User,
   Lock,
+  Hash,
   Eye,
   EyeOff,
   ArrowRight,
@@ -35,16 +37,61 @@ const item = {
 export default function RegisterForm() {
   const navigate = useNavigate();
 
+  const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { register } = useAuth();
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+    confirmPassword: "",
+    role_id: 3,
+  });
+  const handleChange = (e) => {
+  const { name, value } = e.target;
 
-  const handleContinue = (e) => {
+  setFormData((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
+};
+
+  const handleContinue = async (e) => {
     e.preventDefault();
 
-    // TODO: Register API here
+    setErrors({});
 
-    navigate("/profile-setup");
-  };
+    if (!formData.username.trim()) {
+        return setErrors({
+            username: "Username is required.",
+        });
+    }
+
+    if (!formData.password.trim()) {
+        return setErrors({
+            password: "Password is required.",
+        });
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+        return setErrors({
+            confirmPassword: "Passwords do not match.",
+        });
+    }
+
+    try {
+        const { confirmPassword, ...payload } = formData;
+
+        await register(payload);
+
+        navigate("/profile-setup");
+    } catch (error) {
+        alert(
+            error.response?.data?.message ||
+            "Failed to create account."
+        );
+    }
+};
 
   return (
     <motion.form
@@ -57,10 +104,14 @@ export default function RegisterForm() {
       {/* Username */}
 
       <motion.div variants={item}>
-        <Input
+         <Input
           label="Username"
-          placeholder="Choose a username"
+          name="username"
+          type="text"
+          placeholder="Enter your username"
           icon={User}
+          value={formData.username}
+          onChange={handleChange}
         />
       </motion.div>
 
@@ -68,12 +119,15 @@ export default function RegisterForm() {
 
       <motion.div variants={item}>
         <div className="relative">
-          <Input
-            label="Password"
-            type={showPassword ? "text" : "password"}
-            placeholder="Create a password"
-            icon={Lock}
-          />
+         <Input
+          label="Password"
+          name="password"
+          type={showPassword ? "text" : "password"}
+          placeholder="Create a password"
+          icon={Lock}
+          value={formData.password}
+          onChange={handleChange}
+        />
 
           <button
             type="button"
@@ -91,11 +145,19 @@ export default function RegisterForm() {
         <div className="relative">
           <Input
             label="Confirm Password"
+            name="confirmPassword"
             type={showConfirmPassword ? "text" : "password"}
             placeholder="Confirm your password"
             icon={Lock}
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            error={errors.confirmPassword}
           />
-
+          {errors.confirmPassword && (
+            <p className="mt-1 text-sm text-red-500">
+              {errors.confirmPassword}
+            </p>
+          )}
           <button
             type="button"
             onClick={() =>

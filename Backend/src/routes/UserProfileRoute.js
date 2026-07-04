@@ -5,6 +5,6 @@ import { verifyToken } from "../middleware/verifyToken.js";
 
 const router = express.Router();
 
-router.post("/create-profile/", verifyToken ,createProfile);
+router.post("/create-profile", verifyToken ,createProfile);
 
 export default router;

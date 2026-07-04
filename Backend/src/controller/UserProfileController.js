@@ -15,7 +15,6 @@ export async function createProfile(req, res) {
 
         const user_id = req.user.user_id;
 
-        console.log("User ID from token:", user_id);
 
         if (!first_name || !last_name || !email) {
             return res.status(400).json({
@@ -42,7 +41,7 @@ export async function createProfile(req, res) {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("CHECKING THE REQUEST BODY: ", req.body);
         return res.status(500).json({
             message: "Internal server error",
         });
