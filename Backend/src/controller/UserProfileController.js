@@ -1,4 +1,7 @@
-import { createUserProfile } from "../services/UserProfileServices.js";
+import { 
+    createUserProfile,
+    updateUserProfile,
+ } from "../services/UserProfileServices.js";
 
 export async function createProfile(req, res) {
     try {
@@ -47,3 +50,26 @@ export async function createProfile(req, res) {
         });
     }
 }
+
+export const handleUpdateUserProfile = async (req, res) => {
+    try {
+        console.log("🔥 RAW BODY:", req.body);
+        console.log("🔥 RAW KEYS:", Object.keys(req.body || {}));
+        const user_id = req.user.user_id;
+
+        const profile = await updateUserProfile(user_id, req.body);
+
+        return res.status(200).json({
+            success: true,
+            message: "User profile updated successfully.",
+            data: profile,
+        });
+    } catch (error) {
+        console.error("Error updating user profile:", error);
+
+        return res.status(400).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};

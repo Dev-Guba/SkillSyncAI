@@ -53,15 +53,23 @@ export function AuthProvider({ children }) {
             user: response.data.user,
         };
 
-        localStorage.setItem(
-            STORAGE_KEYS.AUTH,
-            JSON.stringify(auth)
-        );
+        localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(auth));
 
-        setUser(auth.user);
         setToken(auth.token);
 
-        return response;
+        const me = await API.getMe();
+
+        setUser(me.data.user);
+
+        localStorage.setItem(
+            STORAGE_KEYS.AUTH,
+            JSON.stringify({
+                token: auth.token,
+                user: me.data.user,
+            })
+        );
+
+        return me.data;
     };
 
     const logout = () => {
@@ -75,6 +83,7 @@ export function AuthProvider({ children }) {
         <AuthContext.Provider
             value={{
                 user,
+                setUser,
                 token,
                 loading,
                 register,
