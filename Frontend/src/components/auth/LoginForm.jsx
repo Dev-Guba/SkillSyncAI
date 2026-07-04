@@ -87,7 +87,18 @@ export default function LoginForm() {
     setIsSubmitting(true);
 
     try {
-      await login(formData);
+      const response = await login(formData);
+      const user = response.user;
+      console.log(user);
+      if (!user.UserProfile) {
+        navigate("/profile-setup");
+        return;
+      }
+
+      if (!user.SkillSets || user.SkillSets.length === 0) {
+        navigate("/skills");
+        return;
+      }
       navigate("/dashboard");
     } catch (error) {
       setErrors({
