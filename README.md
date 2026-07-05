@@ -73,7 +73,14 @@ set the database name into skillsyncaiv2,
 then go back to the vs code.
 
 # SETTING UP THE MIGRATION AND SEEDER
-run this following command for the migration
+run this following command for the migration but first change the directory to source or src
+
+```bash
+cd Backend
+cd src
+```
+
+Then, 
 
 ```bash
 npx sequelize-cli db:migrate
