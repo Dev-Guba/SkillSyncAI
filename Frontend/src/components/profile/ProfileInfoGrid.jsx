@@ -7,29 +7,18 @@ function InfoCard({ icon: Icon, label, value }) {
       <div className="rounded-lg bg-primary-100 p-2 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
         <Icon className="h-4 w-4" />
       </div>
-
       <div className="min-w-0">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted">
-          {label}
-        </p>
-
-        <p className="mt-0.5 truncate text-sm font-medium text-ink">
-          {value ?? "—"}
-        </p>
+        <p className="text-xs font-medium uppercase tracking-wide text-muted">{label}</p>
+        <p className="mt-0.5 truncate text-sm font-medium text-ink">{value || "—"}</p>
       </div>
     </div>
   );
 }
 
 export default function ProfileInfoGrid({ profile }) {
-  if (!profile) return null;
-
   const age = calculateAge(profile.birth_date);
-
   const birthDateLabel = profile.birth_date
-    ? `${formatDate(profile.birth_date)}${
-        age !== null ? ` (${age} yrs)` : ""
-      }`
+    ? `${formatDate(profile.birth_date)}${age !== null ? ` (${age} yrs)` : ""}`
     : null;
 
   return (
