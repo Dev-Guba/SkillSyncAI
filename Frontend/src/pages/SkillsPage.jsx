@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Search, Check, Sparkles, Compass, ArrowRight } from "lucide-react";
@@ -7,6 +7,8 @@ import {
   FloatingGlobe,
   GlobeOverlay,
 } from "../components/globe";
+import {API} from "../api/api.js";
+
 
 const SKILLS = [
   "JavaScript", "Python", "Java", "C++", "React", "Node.js",
@@ -39,10 +41,13 @@ function ChipSection({ title, caption, icon: Icon, items, selected, onToggle, em
       ) : (
         <div className="flex flex-wrap gap-3">
           {items.map((item) => {
-            const isSelected = selected.includes(item);
+            const isSelected = selected.some(
+              (skill) => skill.skill_set_id === item.skill_set_id
+            );
+
             return (
               <motion.button
-                key={item}
+                key={item.skill_set_id}
                 type="button"
                 whileTap={{ scale: 0.95 }}
                 aria-pressed={isSelected}
@@ -54,7 +59,7 @@ function ChipSection({ title, caption, icon: Icon, items, selected, onToggle, em
                 }`}
               >
                 {isSelected && <Check className="h-3.5 w-3.5" />}
-                {item}
+                {item.skill_set_name}
               </motion.button>
             );
           })}
@@ -70,29 +75,71 @@ export default function SkillsPage() {
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [showGlobe, setShowGlobe] = useState(false);
+  const [skills, setSkills] = useState([]);
 
-  const toggle = (value, list, setList) => {
-    setList(
-      list.includes(value)
-        ? list.filter((entry) => entry !== value)
-        : [...list, value]
-    );
+  // FETCHING THE SKILL DATA
+
+  useEffect(() => {
+    fetchSkillSets();
+  }, []);
+
+  const fetchSkillSets = async () => {
+    try {
+      const response = await API.getallSkillSet();
+      console.log(response.data);
+
+      setSkills(response.data.skillSets);
+    } catch (error) {
+      console.error("Failed to fetch skills:", error);
+    }
   };
 
+  const toggle = (value, list, setList) => {
+  const exists = list.some(
+      (item) => item.skill_set_id === value.skill_set_id
+    );
+
+    if (exists) {
+      setList(
+        list.filter(
+          (item) => item.skill_set_id !== value.skill_set_id
+        )
+      );
+    } else {
+      setList([...list, value]);
+    }
+  };
+
+  // SELECTIVE QUERY FOR SKILLS
   const query = search.toLowerCase();
-  const filteredSkills = SKILLS.filter((s) => s.toLowerCase().includes(query));
+  const filteredSkills = skills.filter((skill) =>
+  skill.skill_set_name.toLowerCase().includes(query)
+);
   const filteredInterests = INTERESTS.filter((i) => i.toLowerCase().includes(query));
 
   const totalSelected = selectedSkills.length + selectedInterests.length;
   const canContinue = totalSelected >= MIN_SELECTION;
 
-  const handleContinue = () => {
-    if (!canContinue) return;
-    // TODO: replace with the real "save onboarding selections" API call
-    console.log("Selected skills:", selectedSkills);
-    console.log("Selected interests:", selectedInterests);
+ const handleContinue = async () => {
+  if (!canContinue) return;
+
+  try {
+    const userSkills = selectedSkills.map((skill) => ({
+      skill_set_id: skill.skill_set_id,
+      proficiency_level: "Beginner",
+    }));
+
+    await API.createUserSkills({
+      skills: userSkills,
+    });
+
+
     navigate("/dashboard");
-  };
+  } catch (error) {
+    console.error(error);
+    alert("Failed to save skills.");
+  }
+};
 
   return (
     <section className="relative min-h-screen overflow-hidden bg-white pb-32 dark:bg-surface">
@@ -103,10 +150,13 @@ export default function SkillsPage() {
         <div className="mb-10 flex flex-col items-center">
           <img src={logo} alt="SkillSyncAI" className="mb-4 h-14 w-14 object-contain" />
 
-          <div className="mb-6 flex items-center gap-2">
-            <span className="h-2 w-8 rounded-full bg-border" />
-            <span className="h-2 w-8 rounded-full bg-linear-to-r from-[#5B4BFF] to-[#7A5CFF]" />
-          </div>
+<p className="text-sm font-semibold text-primary">
+  Step 3 of 3
+</p>
+
+<div className="mt-3 h-2 overflow-hidden rounded-full bg-border">
+  <div className="h-full w-full rounded-full bg-gradient-to-r from-[#5B4BFF] to-[#7A5CFF]" />
+</div>
 
           <h1 className="text-center text-3xl font-bold text-ink sm:text-4xl">
             What are your skills & interests?
@@ -158,13 +208,6 @@ export default function SkillsPage() {
           </p>
 
           <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => navigate("/dashboard")}
-              className="rounded-lg text-sm font-medium text-muted outline-none transition hover:text-ink focus-visible:ring-2 focus-visible:ring-[#5B4BFF] focus-visible:ring-offset-2"
-            >
-              Skip for now
-            </button>
 
             <motion.button
               type="button"
@@ -174,7 +217,7 @@ export default function SkillsPage() {
               onClick={handleContinue}
               className="flex h-12 items-center gap-2 rounded-2xl bg-linear-to-r from-[#5B4BFF] to-[#7A5CFF] px-6 font-semibold text-white shadow-[0_15px_40px_rgba(91,75,255,.35)] outline-none transition focus-visible:ring-2 focus-visible:ring-[#5B4BFF] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Continue
+              Finish Setup
               <ArrowRight className="h-4 w-4" />
             </motion.button>
           </div>
