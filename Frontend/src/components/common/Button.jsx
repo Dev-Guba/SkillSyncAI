@@ -7,11 +7,11 @@ const variants = {
   primary:
     "bg-gradient-to-r from-[#5B4BFF] to-[#7A5CFF] text-white shadow-lg hover:shadow-xl",
 
-  secondary:
-    "bg-white border border-gray-200 text-gray-900 hover:border-[#5B4BFF]",
+secondary:
+"bg-surface border border-border text-ink hover:border-primary",
 
-  ghost:
-    "bg-transparent text-gray-900",
+ghost:
+"bg-transparent text-ink hover:text-primary",
 
   outline:
     "border border-[#5B4BFF] text-[#5B4BFF]",
