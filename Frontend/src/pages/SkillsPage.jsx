@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Search, Check, Sparkles, Compass, ArrowRight } from "lucide-react";
+import { useAuth } from "../context/AuthContext.jsx";
 import logo from "../assets/logos/logo.png";
 import {API} from "../api/api.js";
 
@@ -67,7 +68,13 @@ function ChipSection({ title, caption, icon: Icon, items, selected, onToggle, em
 
 export default function SkillsPage() {
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [search, setSearch] = useState("");
+
+const [jobTitles, setJobTitles] = useState([]);
+const [selectedJobTitle, setSelectedJobTitle] = useState(null);
+
+
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -76,7 +83,29 @@ export default function SkillsPage() {
 
   useEffect(() => {
     fetchSkillSets();
+    fetchJobTitles();
   }, []);
+
+  const fetchJobTitles = async () => {
+
+    try {
+
+        const response =
+            await API.getAllJobSkills();
+
+        setJobTitles(
+            response.data.data
+        );
+
+    } catch(error){
+
+        console.error(
+            "Failed loading job titles:",
+            error
+        );
+
+    }
+};
 
   const fetchSkillSets = async () => {
     try {
@@ -118,7 +147,13 @@ export default function SkillsPage() {
  const handleContinue = async () => {
   if (!canContinue) return;
 
+  if (!selectedJobTitle) {
+    alert("Please select a target career.");
+    return;
+  }
+
   try {
+    // Save skills
     const userSkills = selectedSkills.map((skill) => ({
       skill_set_id: skill.skill_set_id,
       proficiency_level: "Beginner",
@@ -129,10 +164,24 @@ export default function SkillsPage() {
     });
 
 
+    // Save target job
+    await API.createUserJobTitle({
+      job_title_id: selectedJobTitle,
+    });
+
+
+    // Refresh /me so context has latest data
+    await refreshUser();
+
+
     navigate("/dashboard");
+
   } catch (error) {
-    console.error(error);
-    alert("Failed to save skills.");
+    console.error("Setup error:", error);
+    alert(
+      error.response?.data?.message ||
+      "Failed to complete setup."
+    );
   }
 };
 
@@ -183,16 +232,54 @@ export default function SkillsPage() {
           emptyHint={`No skills match "${search}". Try a different term.`}
         />
 
-        <ChipSection
-          title="Interests"
-          caption="fields you'd like to explore or grow in"
-          icon={Compass}
-          items={filteredInterests}
-          selected={selectedInterests}
-          onToggle={(value) => toggle(value, selectedInterests, setSelectedInterests)}
-          emptyHint={`No interests match "${search}". Try a different term.`}
-          className="mt-10"
-        />
+        <div className="mt-10">
+
+  <div className="mb-4 flex items-center gap-2">
+
+    <Compass className="h-5 w-5 text-primary" />
+
+    <h2 className="text-lg font-semibold text-ink">
+      Target Career
+    </h2>
+
+  </div>
+
+
+  <div className="flex flex-wrap gap-3">
+
+    {
+      jobTitles.map((job)=>{
+
+        const selected =
+          selectedJobTitle === job.job_title_id;
+
+
+        return (
+
+          <motion.button
+            key={job.job_title_id}
+            type="button"
+            whileTap={{scale:0.95}}
+            onClick={()=>
+              setSelectedJobTitle(
+                job.job_title_id
+              )
+            }
+            className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+              selected
+              ?
+              "bg-primary text-white border-primary"
+              :
+              "border-border text-ink hover:border-primary"
+            }`}
+          >
+            {job.job_title_name}
+          </motion.button>
+        )
+      })
+    }
+  </div>
+</div>
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-white/80 backdrop-blur-md dark:bg-surface/80">

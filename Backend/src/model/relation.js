@@ -6,12 +6,14 @@ import JobTitle from "./JobTitle.js";
 import JobTitleSkill from "./JobTitleSkill.js";
 import UserSkill from "./UserSkill.js";
 import UserInterest from "./UserInterest.js";
+import UserJobTitle from "./UserJobTitle.js";
 import Interests from "./Interests.js";
 
+
 /*
-|--------------------------------------------------------------------------
+|-------------------------------------------------------------------------- 
 | Role <-> User
-|--------------------------------------------------------------------------
+|-------------------------------------------------------------------------- 
 */
 
 Role.hasMany(User, {
@@ -22,10 +24,11 @@ User.belongsTo(Role, {
   foreignKey: "role_id",
 });
 
+
 /*
-|--------------------------------------------------------------------------
+|-------------------------------------------------------------------------- 
 | User <-> UserProfile
-|--------------------------------------------------------------------------
+|-------------------------------------------------------------------------- 
 */
 
 User.hasOne(UserProfile, {
@@ -36,10 +39,11 @@ UserProfile.belongsTo(User, {
   foreignKey: "user_id",
 });
 
+
 /*
-|--------------------------------------------------------------------------
-| User <-> SkillSet (Many-to-Many)
-|--------------------------------------------------------------------------
+|-------------------------------------------------------------------------- 
+| User <-> SkillSet
+|-------------------------------------------------------------------------- 
 */
 
 User.belongsToMany(SkillSet, {
@@ -54,10 +58,11 @@ SkillSet.belongsToMany(User, {
   otherKey: "user_id",
 });
 
+
 /*
-|--------------------------------------------------------------------------
-| JobTitle <-> SkillSet (Many-to-Many)
-|--------------------------------------------------------------------------
+|-------------------------------------------------------------------------- 
+| JobTitle <-> SkillSet
+|-------------------------------------------------------------------------- 
 */
 
 JobTitle.belongsToMany(SkillSet, {
@@ -72,10 +77,31 @@ SkillSet.belongsToMany(JobTitle, {
   otherKey: "job_title_id",
 });
 
+
 /*
-|--------------------------------------------------------------------------
-| User <-> Interest (Many-to-Many)
-|--------------------------------------------------------------------------
+|-------------------------------------------------------------------------- 
+| User <-> JobTitle
+| Multiple job titles
+|-------------------------------------------------------------------------- 
+*/
+
+User.belongsToMany(JobTitle, {
+  through: UserJobTitle,
+  foreignKey: "user_id",
+  otherKey: "job_title_id",
+});
+
+JobTitle.belongsToMany(User, {
+  through: UserJobTitle,
+  foreignKey: "job_title_id",
+  otherKey: "user_id",
+});
+
+
+/*
+|-------------------------------------------------------------------------- 
+| User <-> Interests
+|-------------------------------------------------------------------------- 
 */
 
 User.belongsToMany(Interests, {
@@ -90,6 +116,7 @@ Interests.belongsToMany(User, {
   otherKey: "user_id",
 });
 
+
 export {
   Role,
   User,
@@ -100,4 +127,5 @@ export {
   UserSkill,
   Interests,
   UserInterest,
+  UserJobTitle,
 };

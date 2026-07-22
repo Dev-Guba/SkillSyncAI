@@ -52,6 +52,7 @@ export default function ProfileSetupPage() {
     try {
       console.log(form);
       await API.createUserProfile(form);
+      
 
       navigate("/skills");
     } catch (error) {

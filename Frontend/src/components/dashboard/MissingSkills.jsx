@@ -1,20 +1,17 @@
-const missingSkills = [
-  "TypeScript",
-  "Redux",
-  "REST API",
-  "Testing",
-];
-
-
-export default function MissingSkills() {
+export default function MissingSkills({
+  skills = []
+}) {
   return (
-    <div className="
-  rounded-2xl
-  border border-border
-  bg-surface
-  p-6
-  shadow-soft
-">
+    <div
+      className="
+      rounded-2xl
+      border border-border
+      bg-surface
+      p-6
+      shadow-soft
+      "
+    >
+
       <h2 className="text-lg font-semibold">
         Missing Skills
       </h2>
@@ -25,25 +22,30 @@ export default function MissingSkills() {
 
 
       <div className="mt-5 flex flex-wrap gap-3">
-        {missingSkills.map((skill) => (
+
+        {skills.map((skill) => (
+
           <div
             key={skill}
-className="
-  rounded-full
-  border
-  border-orange-400/30
-  bg-orange-400/10
-  px-4
-  py-2
-  text-sm
-  font-medium
-  text-orange-500
-"
+            className="
+            rounded-full
+            border
+            border-orange-400/30
+            bg-orange-400/10
+            px-4
+            py-2
+            text-sm
+            font-medium
+            text-orange-500
+            "
           >
             {skill}
           </div>
+
         ))}
+
       </div>
+
     </div>
   );
 }

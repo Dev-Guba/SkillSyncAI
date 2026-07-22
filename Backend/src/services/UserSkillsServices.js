@@ -1,5 +1,5 @@
 import sequelize  from "../config/db.js";
-import { UserSkill, SkillSet } from "../model/relation.js";
+import { User ,UserSkill, SkillSet } from "../model/relation.js";
 
 const VALID_PROFICIENCY_LEVELS = [
     "Beginner",
@@ -25,6 +25,46 @@ function validateSkills(skills) {
             );
         }
     }
+}
+
+export async function getUserSkillsForAI(user_id){
+
+    const user = await User.findByPk(user_id,{
+        include:[
+            {
+                model: SkillSet,
+                attributes:[
+                    "skill_set_name"
+                ],
+                through:{
+                    attributes:[
+                        "proficiency_level"
+                    ]
+                }
+            }
+        ]
+    });
+
+
+    if (!user) {
+        throw new Error("User not found");
+    }
+
+
+    return user.SkillSets.map(
+        skill => ({
+            skill: skill.skill_set_name,
+            proficiency: skill.UserSkill.proficiency_level
+        })
+    );
+}
+
+export function formatSkillsForAI(skills){
+
+    return skills.map(
+        skill => skill.skill_set_name
+    );
+
 }
 
 async function verifySkillSets(skillIds) {
