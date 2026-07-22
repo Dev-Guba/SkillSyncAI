@@ -1,6 +1,7 @@
 import { 
     createUserSkills,
     updateUserSkills,
+    getUserSkillsForAI,
  } from "../services/UserSkillsServices.js";
 
 export const handleUserSkills = async (req, res) => {
@@ -51,3 +52,28 @@ export const handleUpdateUserSkills = async (req, res) => {
         });
     }
 };
+
+export async function handleGetUserSkills(req, res){
+
+    try {
+
+        const { user_id } = req.params;
+
+        const skills = await getUserSkillsForAI(user_id);
+
+        res.json({
+            success:true,
+            skills
+        });
+
+
+    } catch(error){
+
+        res.status(500).json({
+            success:false,
+            message:error.message
+        });
+
+    }
+
+}

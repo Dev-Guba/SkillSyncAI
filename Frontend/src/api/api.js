@@ -23,6 +23,9 @@ export const API = {
     // Suggestion
     createSuggestionAPI: (data) => Http.post("/api/interest/suggest",data),
 
+    // AI RECOMMENDATION
+    getAIRecommendation: (data) => Http.post("/api/ai/recommend", data),
+
 
 }
 

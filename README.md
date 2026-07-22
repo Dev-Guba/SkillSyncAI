@@ -91,3 +91,16 @@ after that run this seeder command
 ```bash
 npx sequelize-cli db:seed:all
 ```
+
+### SETTING UP THE AI
+Go to this website [text](https://www.python.org/downloads/)
+
+and open the terminal (windows key + r) and type this command:
+
+```bash
+where python
+```
+
+it should show where the python. Copy it
+
+and paste in your environmental variable (just search it)

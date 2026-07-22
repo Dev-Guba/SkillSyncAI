@@ -26,24 +26,24 @@ export function AuthProvider({ children }) {
         setLoading(false);
     }, []);
 
-    const register = async (data) => {
-        const response = await API.register(data);
+        const register = async (data) => {
+            const response = await API.register(data);
 
-        const auth = {
-            token: response.data.token,
-            user: response.data.user,
+            const auth = {
+                token: response.data.token,
+                user: response.data.user,
+            };
+
+            localStorage.setItem(
+                STORAGE_KEYS.AUTH,
+                JSON.stringify(auth)
+            );
+
+            setToken(auth.token);
+            setUser(auth.user);
+
+            return response;
         };
-
-        localStorage.setItem(
-            STORAGE_KEYS.AUTH,
-            JSON.stringify(auth)
-        );
-
-        setUser(auth.user);
-        setToken(auth.token);
-
-        return response;
-    };
 
     const login = async (data) => {
         const response = await API.login(data);
@@ -71,6 +71,27 @@ export function AuthProvider({ children }) {
 
         return me.data;
     };
+    const refreshUser = async () => {
+    try {
+        const me = await API.getMe();
+
+        setUser(me.data.user);
+
+        localStorage.setItem(
+            STORAGE_KEYS.AUTH,
+            JSON.stringify({
+                token,
+                user: me.data.user,
+            })
+        );
+
+        return me.data.user;
+
+    } catch (error) {
+        console.error("Failed to refresh user:", error);
+        throw error;
+    }
+};
 
     const logout = () => {
         localStorage.removeItem(STORAGE_KEYS.AUTH);
@@ -88,6 +109,7 @@ export function AuthProvider({ children }) {
                 loading,
                 register,
                 login,
+                refreshUser,
                 logout,
                 isAuthenticated: !!token,
             }}

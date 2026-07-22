@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Search, Check, Sparkles, Compass, ArrowRight } from "lucide-react";
+import { useAuth } from "../context/AuthContext.jsx";
 import logo from "../assets/logos/logo.png";
 import {API} from "../api/api.js";
 
@@ -67,6 +68,7 @@ function ChipSection({ title, caption, icon: Icon, items, selected, onToggle, em
 
 export default function SkillsPage() {
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [search, setSearch] = useState("");
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [selectedInterests, setSelectedInterests] = useState([]);
@@ -128,8 +130,10 @@ export default function SkillsPage() {
       skills: userSkills,
     });
 
+    await refreshUser();
 
     navigate("/dashboard");
+
   } catch (error) {
     console.error(error);
     alert("Failed to save skills.");
