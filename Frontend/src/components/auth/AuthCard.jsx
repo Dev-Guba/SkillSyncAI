@@ -6,28 +6,56 @@ import RegisterForm from "./RegisterForm";
 
 export default function AuthCard({ mode }) {
   const navigate = useNavigate();
+
   const isLogin = mode === "login";
 
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{
+        opacity: 0,
+        y: 30,
+        scale: 0.98,
+      }}
+      animate={{
+        opacity: 1,
+        y: 0,
+        scale: 1,
+      }}
       transition={{
-        duration: 0.4,
+        duration: 0.35,
         layout: {
           type: "spring",
-          stiffness: 250,
-          damping: 26,
+          stiffness: 260,
+          damping: 25,
         },
       }}
-      className="w-full max-w-md overflow-hidden rounded-[32px] border border-gray-200/80 bg-white p-8 shadow-[0_30px_80px_rgba(0,0,0,.08)] dark:border-white/10 dark:bg-slate-900"
+className="
+w-full
+max-w-[440px]
+rounded-[32px]
+border
+border-border
+bg-surface
+p-6
+sm:p-8
+shadow-soft-lg
+"
     >
-      {/* ---------- Login / Register Switch ---------- */}
 
+      {/* Switch */}
       <div className="mb-8">
-        <div className="relative flex rounded-2xl bg-slate-100 p-1 dark:bg-slate-800">
-          {/* Sliding Indicator */}
+
+        <div
+          className="
+            relative
+            flex
+            rounded-2xl
+            bg-surface-alt
+            p-1
+          "
+        >
+
           <motion.div
             layoutId="auth-switch"
             transition={{
@@ -35,55 +63,117 @@ export default function AuthCard({ mode }) {
               stiffness: 350,
               damping: 30,
             }}
-            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl bg-white shadow-md dark:bg-slate-700 ${
-              isLogin ? "left-1" : "left-[calc(50%+2px)]"
-            }`}
+            className={`
+              absolute
+              inset-y-1
+              w-[calc(50%-4px)]
+              rounded-xl
+              bg-surface
+              shadow-soft
+              ${
+                isLogin
+                  ? "left-1"
+                  : "left-[calc(50%+2px)]"
+              }
+            `}
           />
 
+
           <button
+            type="button"
             onClick={() => navigate("/login")}
-            className={`relative z-10 flex-1 rounded-xl py-3 text-sm font-semibold transition-colors ${
-              isLogin ? "text-[#5B4BFF]" : "text-muted"
-            }`}
+            className={`
+              relative
+              z-10
+              flex-1
+              rounded-xl
+              py-3
+              text-sm
+              font-semibold
+              transition-colors
+              ${
+                isLogin
+                  ? "text-primary"
+                  : "text-muted"
+              }
+            `}
           >
             Log In
           </button>
 
+
           <button
+            type="button"
             onClick={() => navigate("/register")}
-            className={`relative z-10 flex-1 rounded-xl py-3 text-sm font-semibold transition-colors ${
-              !isLogin ? "text-[#5B4BFF]" : "text-muted"
-            }`}
+            className={`
+              relative
+              z-10
+              flex-1
+              rounded-xl
+              py-3
+              text-sm
+              font-semibold
+              transition-colors
+              ${
+                !isLogin
+                  ? "text-primary"
+                  : "text-muted"
+              }
+            `}
           >
             Register
           </button>
+
         </div>
+
       </div>
 
-      {/* ---------- Heading ---------- */}
 
+      {/* Heading */}
       <AnimatePresence mode="wait">
+
         <motion.div
           key={mode}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -12 }}
-          transition={{ duration: 0.25 }}
+          initial={{
+            opacity: 0,
+            y: 15,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+          exit={{
+            opacity: 0,
+            y: -15,
+          }}
+          transition={{
+            duration: 0.25,
+          }}
         >
-          <h2 className="text-3xl font-bold text-ink">
-            {isLogin ? "Welcome Back" : "Create Your Account"}
-          </h2>
 
-          <p className="mt-3 text-muted">
+          <h1
+            className="
+              text-3xl
+              font-extrabold
+              tracking-tight
+              text-ink
+              sm:text-4xl
+            "
+          >
             {isLogin
-              ? "Sign in to continue your SkillSyncAI journey."
-              : "Join SkillSyncAI and let AI guide your career path."}
-          </p>
+              ? "Welcome back"
+              : "Create your account"}
+          </h1>
+
+
+
+
         </motion.div>
+
       </AnimatePresence>
 
-      {/* ---------- Form ---------- */}
 
+      {/* Form */}
       <motion.div
         layout
         transition={{
@@ -92,8 +182,14 @@ export default function AuthCard({ mode }) {
           damping: 30,
         }}
       >
-        {isLogin ? <LoginForm /> : <RegisterForm />}
+
+        {isLogin
+          ? <LoginForm />
+          : <RegisterForm />}
+
       </motion.div>
+
+
     </motion.div>
   );
 }

@@ -1,27 +1,79 @@
-import { useState } from "react";
-import { useUserProfile } from "@/hooks/useUserProfile";
-import ProfileHeader from "@/components/profile/ProfileHeader";
-import ProfileInfoGrid from "@/components/profile/ProfileInfoGrid";
-import EditProfileModal from "@/components/profile/EditProfileModal";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import StatsCards from "@/components/dashboard/StatsCards";
+import ProfileCompletionCard from "@/components/dashboard/ProfileCompletionCard";
+import SkillPreview from "@/components/dashboard/SkillPreview";
+import RecommendationPreview from "@/components/dashboard/RecommendationPreview";
+import JobPreview from "@/components/dashboard/JobPreview";
+import RoadmapPreview from "@/components/dashboard/RoadmapPreview";
+import QuickActions from "@/components/dashboard/QuickActions";
+
 
 export default function DashboardPage() {
-  const { profile, updateProfile, isSaving } = useUserProfile();
-  const [isEditOpen, setIsEditOpen] = useState(false);
 
-  return (
-    <section className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
-      <div className="flex flex-col gap-6">
-        <ProfileHeader profile={profile} onEdit={() => setIsEditOpen(true)} />
-        <ProfileInfoGrid profile={profile} />
-      </div>
+    return (
+        <section className="space-y-6 p-4 sm:p-6 lg:p-8">
 
-      <EditProfileModal
-        profile={profile}
-        isOpen={isEditOpen}
-        onClose={() => setIsEditOpen(false)}
-        onSave={updateProfile}
-        isSaving={isSaving}
-      />
-    </section>
-  );
+        {/* HEADER */}
+        <DashboardHeader />
+
+
+            {/* STATISTICS */}
+            <StatsCards />
+
+
+            {/* PROFILE + QUICK ACTION */}
+<div className="
+    grid
+    items-start
+    gap-6
+    lg:grid-cols-12
+">
+
+                <div className="lg:col-span-8">
+                    <ProfileCompletionCard />
+                </div>
+
+
+                <div className="lg:col-span-4">
+    <QuickActions />
+</div>
+
+            </div>
+
+
+
+            {/* SKILLS + RECOMMENDATIONS */}
+
+            <div className="
+                grid
+                gap-6
+                lg:grid-cols-2
+            ">
+
+                <SkillPreview />
+
+                <RecommendationPreview />
+
+            </div>
+
+
+
+            {/* JOB + ROADMAP */}
+
+<div className="
+    grid
+    items-start
+    gap-6
+    lg:grid-cols-2
+">
+
+                <JobPreview />
+
+                <RoadmapPreview />
+
+            </div>
+
+
+        </section>
+    );
 }

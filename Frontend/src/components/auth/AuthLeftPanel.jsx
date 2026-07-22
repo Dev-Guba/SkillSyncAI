@@ -9,81 +9,124 @@ const features = [
 
 export default function AuthLeftPanel() {
   return (
-    <div className="flex h-full w-full flex-col justify-between px-14 py-12">
+    <div className="
+      flex
+      h-full
+      w-full
+      flex-col
+      justify-center
+      px-12
+      xl:px-16
+    ">
 
-      <div>
-
-        <div className="flex items-center gap-4">
+      {/* Brand */}
+      <div className="absolute top-10">
+        <div className="flex items-center gap-3">
           <img
             src={logo}
-            className="h-12 w-12"
+            className="h-11 w-11 object-contain"
             alt="SkillSyncAI"
           />
 
-          <div>
-            <h2 className="text-2xl font-bold">
-              SkillSyncAI
-            </h2>
-          </div>
+          <h2 className="text-xl font-bold text-ink">
+            SkillSyncAI
+          </h2>
         </div>
+      </div>
 
-        <div className="mt-24">
 
-          <h1 className="text-6xl font-black leading-tight tracking-tight">
+      {/* Main Content */}
+      <div className="max-w-xl">
 
-            AI that connects
+        <h1
+          className="
+            text-5xl
+            xl:text-6xl
+            font-black
+            leading-[1.05]
+            tracking-tight
+            text-ink
+          "
+        >
+          AI that connects
+          <br />
 
-            <br />
+          your skills to
 
-            your skills to
+          <br />
 
-            <br />
+          <span className="
+            bg-gradient-to-r 
+            from-[#5B4BFF] 
+            to-[#7A5CFF]
+            bg-clip-text
+            text-transparent
+          ">
+            better opportunities.
+          </span>
 
-            <span className="bg-gradient-to-r from-[#5B4BFF] to-[#7A5CFF] bg-clip-text text-transparent">
-              the right opportunities.
-            </span>
+        </h1>
 
-          </h1>
 
-          <p className="mt-8 max-w-xl text-lg text-gray-500 leading-8">
 
-            Discover careers tailored to your skills, interests,
-            and potential with intelligent recommendations
-            built specifically for students and professionals.
+        {/* Features */}
 
-          </p>
+        <div className="mt-8 space-y-4">
 
-          <div className="mt-12 space-y-5">
+          {features.map((item)=>(
+            <div
+              key={item}
+              className="
+                flex
+                items-center
+                gap-3
+              "
+            >
 
-            {features.map((item) => (
-
-              <div
-                key={item}
-                className="flex items-center gap-4"
-              >
-
+              <div className="
+                flex
+                h-7
+                w-7
+                items-center
+                justify-center
+                rounded-full
+                bg-primary/10
+              ">
                 <CheckCircle2
-                  className="text-[#5B4BFF]"
-                  size={24}
+                  size={17}
+                  className="text-primary"
                 />
-
-                <span className="text-lg font-medium">
-                  {item}
-                </span>
-
               </div>
 
-            ))}
 
-          </div>
+              <span className="
+                text-base
+                font-medium
+                text-ink
+              ">
+                {item}
+              </span>
+
+            </div>
+          ))}
 
         </div>
 
       </div>
 
-      <p className="text-sm text-gray-400">
+
+      {/* Footer */}
+      <p
+        className="
+          absolute
+          bottom-10
+          text-sm
+          text-muted
+        "
+      >
         © 2026 SkillSyncAI
       </p>
+
 
     </div>
   );

@@ -9,8 +9,10 @@ export default function DashboardLayout() {
 
       <div className="flex flex-1 flex-col">
         <DashboardMobileNav />
-        <main className="flex-1">
-          <Outlet />
+        <main className="flex-1 overflow-x-hidden">
+          <div className="mx-auto w-full max-w-7xl">
+    <Outlet />
+</div>
         </main>
       </div>
     </div>

@@ -3,10 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Search, Check, Sparkles, Compass, ArrowRight } from "lucide-react";
 import logo from "../assets/logos/logo.png";
-import {
-  FloatingGlobe,
-  GlobeOverlay,
-} from "../components/globe";
 import {API} from "../api/api.js";
 
 
@@ -74,7 +70,6 @@ export default function SkillsPage() {
   const [search, setSearch] = useState("");
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [selectedInterests, setSelectedInterests] = useState([]);
-  const [showGlobe, setShowGlobe] = useState(false);
   const [skills, setSkills] = useState([]);
 
   // FETCHING THE SKILL DATA
@@ -223,9 +218,6 @@ export default function SkillsPage() {
           </div>
         </div>
       </div>
-
-      <FloatingGlobe onClick={() => setShowGlobe(true)} />
-      <GlobeOverlay open={showGlobe} onClose={() => setShowGlobe(false)} />
     </section>
   );
 }
