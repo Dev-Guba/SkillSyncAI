@@ -18,6 +18,12 @@ export const API = {
     createUserSkills: (data) => Http.post("/api/user-skills/create-skill", data),
     updateUserSkills: (data) => Http.put("/api/user-skills/update-skill", data),
 
+    // JOBS
+    getAllJobSkills: () => Http.get("/api/job/getAllJobTitle"),
+
+    // USER JOB SKILLS
+    createUserJobTitle: (data) => Http.post("/api/user-job-title/create-user-jobtitle",data),
+
     // INTEREST
     createInterestAPI: (data) => Http.post("/api/interest/create-interest", data),
     // Suggestion

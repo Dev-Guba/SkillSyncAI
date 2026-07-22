@@ -2,30 +2,20 @@ import { Sparkles, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-
 export default function SkillPreview() {
 
     const { user } = useAuth();
 
     const skills = user?.SkillSets ?? [];
+    const jobTitles = user?.JobTitles ?? [];
 
 
-    const displaySkills = skills.length
-        ? skills.slice(0, 4)
-        : [
-            {
-                skill_set_name: "React",
-                proficiency_level: "Advanced",
-            },
-            {
-                skill_set_name: "JavaScript",
-                proficiency_level: "Intermediate",
-            },
-            {
-                skill_set_name: "Python",
-                proficiency_level: "Beginner",
-            },
-        ];
+    const displaySkills = skills.slice(0, 4);
+
+
+    const careerArea = jobTitles.length
+        ? jobTitles[0].job_title_name
+        : "No career goal set";
 
 
     return (
@@ -96,49 +86,64 @@ export default function SkillPreview() {
 
             <div className="mt-6 space-y-3">
 
-                {displaySkills.map((skill) => (
+                {
+                    displaySkills.length > 0 ? (
 
-                    <div
-                        key={skill.skill_set_name}
-                        className="
-                        flex
-                        items-center
-                        justify-between
-                        rounded-2xl
-                        bg-surface-alt
-                        px-4
-                        py-3
-                        "
-                    >
+                        displaySkills.map((skill) => (
 
-                        <span className="font-medium text-ink">
-                            {skill.skill_set_name}
-                        </span>
+                            <div
+                                key={skill.skill_set_id}
+                                className="
+                                flex
+                                items-center
+                                justify-between
+                                rounded-2xl
+                                bg-surface-alt
+                                px-4
+                                py-3
+                                "
+                            >
+
+                                <span className="font-medium text-ink">
+                                    {skill.skill_set_name}
+                                </span>
 
 
-                        <span
-                            className="
-                            rounded-full
-                            bg-primary/10
-                            px-3
-                            py-1
-                            text-xs
-                            font-semibold
-                            text-primary
-                            "
-                        >
-                            {skill.proficiency_level || "Added"}
-                        </span>
+                                <span
+                                    className="
+                                    rounded-full
+                                    bg-primary/10
+                                    px-3
+                                    py-1
+                                    text-xs
+                                    font-semibold
+                                    text-primary
+                                    "
+                                >
+                                    {
+                                    skill.UserSkill?.proficiency_level
+                                    || "Added"
+                                    }
+                                </span>
 
-                    </div>
+                            </div>
 
-                ))}
+                        ))
+
+                    ) : (
+
+                        <p className="text-sm text-muted">
+                            No skills added yet.
+                        </p>
+
+                    )
+                }
 
             </div>
 
 
 
-            {/* Bottom Insight */}
+            {/* Career Insight */}
 
             <div
                 className="
@@ -152,12 +157,12 @@ export default function SkillPreview() {
             >
 
                 <p className="text-xs text-muted">
-                    Strongest career area
+                    Target career
                 </p>
 
 
                 <p className="mt-1 font-bold text-ink">
-                    Frontend Development
+                    {careerArea}
                 </p>
 
             </div>

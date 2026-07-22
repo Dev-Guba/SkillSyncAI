@@ -1,5 +1,11 @@
 import { JobTitle, SkillSet } from "../model/relation.js";
 
+export async function getAllJobSkills(){
+    const jobTitles = await JobTitle.findAll();
+    
+    return jobTitles;
+}
+
 
 export async function getJobSkillsForAI(job_title_id){
 

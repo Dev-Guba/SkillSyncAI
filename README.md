@@ -104,3 +104,15 @@ where python
 it should show where the python. Copy it
 
 and paste in your environmental variable (just search it)
+
+after it settle down do this:
+
+```bash
+cd AI
+
+.venv\Scripts\activate
+
+uvicorn main:app --reload
+```
+
+this will launch the AI
