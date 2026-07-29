@@ -12,6 +12,8 @@ import Interests from "./Interests.js";
 import Program from "./Program.js";
 import ProgramSkills from "./ProgramSkills.js";
 
+import ProgramJobTitle from "./ProgramJobTitle.js";
+
 
 /*
 |--------------------------------------------------------------------------
@@ -152,6 +154,25 @@ Interests.belongsToMany(User, {
   otherKey: "user_id",
 });
 
+/*
+|--------------------------------------------------------------------------
+| Program <-> JobTitle
+|--------------------------------------------------------------------------
+*/
+
+Program.belongsToMany(JobTitle,{
+    through: ProgramJobTitle,
+    foreignKey:"program_id",
+    otherKey:"job_title_id"
+});
+
+
+JobTitle.belongsToMany(Program,{
+    through: ProgramJobTitle,
+    foreignKey:"job_title_id",
+    otherKey:"program_id"
+});
+
 
 export {
   Role,
@@ -166,4 +187,5 @@ export {
   UserJobTitle,
   Program,
   ProgramSkills,
+  ProgramJobTitle,
 };

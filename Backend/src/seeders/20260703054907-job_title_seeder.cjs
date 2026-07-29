@@ -69,7 +69,15 @@ module.exports = {
       // Hospitality
       { job_title_name: 'Hotel Staff' },
       { job_title_name: 'Chef' },
-      { job_title_name: 'Customer Service Representative' }
+      { job_title_name: 'Customer Service Representative' },
+
+
+      // Criminology / Law Enforcement
+      { job_title_name: 'Forensic Investigator' },
+      { job_title_name: 'Police Officer' },
+      { job_title_name: 'Crime Scene Investigator' },
+      { job_title_name: 'Correctional Officer' },
+      { job_title_name: 'Customs Officer' }
 
     ]);
   },

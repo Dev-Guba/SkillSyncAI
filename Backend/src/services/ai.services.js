@@ -7,7 +7,9 @@ export async function generateAIRecommendation(
     userSkills,
     requiredSkills
 ) {
-
+    console.log("===== AI REQUEST =====");
+    console.log("User Skills:", userSkills);
+    console.log("Required Skills:", requiredSkills);
 
     const analysis = await axios.post(
         `${AI_URL}/analyze`,
