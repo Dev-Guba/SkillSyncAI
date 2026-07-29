@@ -1,6 +1,17 @@
 import { UserProfile } from "../model/relation.js";
 
-export async function createUserProfile(user_id, first_name, last_name, email, phone_number,birth_date, gender, bio, location) {
+export async function createUserProfile(
+    user_id,
+    first_name,
+    last_name,
+    email,
+    phone_number,
+    birth_date,
+    gender,
+    bio,
+    location,
+    program_id
+) {
     try {
         const newUserProfile = await UserProfile.create({
             user_id,
@@ -12,15 +23,17 @@ export async function createUserProfile(user_id, first_name, last_name, email, p
             gender,
             bio,
             location,
-        })
+            program_id
+        });
 
         return newUserProfile;
-    }
-    catch (error) {
+
+    } catch(error) {
         console.error("Error creating user profile:", error);
         throw error;
     }
 }
+
 export async function updateUserProfile(user_id, updates) {
     const profile = await UserProfile.findOne({
         where: { user_id }

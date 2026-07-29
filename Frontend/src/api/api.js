@@ -29,6 +29,11 @@ export const API = {
     // Suggestion
     createSuggestionAPI: (data) => Http.post("/api/interest/suggest",data),
 
+    // PROGRAM
+    getAllPrograms: () => Http.get("/api/program/getProgram"),
+    getProgramSkills: (programId) => Http.get(`/api/program/${programId}/skills`),
+    getProgramJobTitles: (programId) => Http.get(`/api/program/${programId}/jobtitles`),
+
     // AI RECOMMENDATION
     getAIRecommendation: (data) => Http.post("/api/ai/recommend", data),
 
