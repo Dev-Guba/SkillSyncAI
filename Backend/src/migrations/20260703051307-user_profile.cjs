@@ -20,6 +20,16 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
+      program_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: "Programs",
+          key: "program_id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "RESTRICT",
+      },
       first_name: {
         type: Sequelize.STRING(50),
         allowNull: false,
