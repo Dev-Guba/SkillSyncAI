@@ -30,11 +30,6 @@ def analyze(data: dict):
     user_skills = data["user_skills"]
     required_skills = data["required_skills"]
 
-    print({
-        "user_skills": user_skills,
-        "required_skills": required_skills
-    })
-
     result = calculate_skill_gap(
         user_skills,
         required_skills
