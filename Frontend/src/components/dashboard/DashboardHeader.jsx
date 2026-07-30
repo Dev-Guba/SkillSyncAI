@@ -20,11 +20,6 @@ export default function DashboardHeader() {
         Good to see you, {fullName} 👋
       </h1>
 
-      <p className="max-w-xl text-muted">
-        Track your skills, discover opportunities, and
-        continue building your career path.
-      </p>
-
     </section>
   );
 }

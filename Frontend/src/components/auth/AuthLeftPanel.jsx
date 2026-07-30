@@ -56,7 +56,7 @@ export default function AuthLeftPanel() {
           <br />
 
           <span className="
-            bg-gradient-to-r 
+            bg-linear-to-r 
             from-[#5B4BFF] 
             to-[#7A5CFF]
             bg-clip-text

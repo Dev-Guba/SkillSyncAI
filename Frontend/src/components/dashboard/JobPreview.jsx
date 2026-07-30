@@ -33,6 +33,7 @@ export default function JobPreview() {
   return (
     <div
       className="
+      h-fullss
       rounded-3xl
       border border-border
       bg-surface

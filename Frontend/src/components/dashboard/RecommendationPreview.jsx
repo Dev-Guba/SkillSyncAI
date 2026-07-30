@@ -13,6 +13,7 @@ export default function RecommendationPreview({
   return (
     <div
       className="
+      h-full
       rounded-3xl
       border border-border
       bg-surface

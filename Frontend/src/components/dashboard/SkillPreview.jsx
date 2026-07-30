@@ -21,6 +21,7 @@ export default function SkillPreview() {
     return (
         <div
             className="
+            h-full
             rounded-3xl
             border border-border
             bg-surface

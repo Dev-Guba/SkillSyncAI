@@ -82,9 +82,10 @@ export default function StatsCards() {
 
         return (
           <div
-            key={card.title}
-            className="
-              rounded-2xl
+    key={card.title}
+    className="
+      h-full
+      rounded-2xl
               border border-border
               bg-surface
               p-4

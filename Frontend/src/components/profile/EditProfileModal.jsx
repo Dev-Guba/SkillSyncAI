@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { API } from "@/api/api.js";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import Input from "@/components/common/Input";
@@ -16,6 +17,27 @@ const GENDER_OPTIONS = [
 export default function EditProfileModal({ profile, isOpen, onClose, onSave, isSaving }) {
   const [formData, setFormData] = useState(profile);
   const [errors, setErrors] = useState({});
+  const [programs, setPrograms] = useState([]);
+
+  useEffect(() => {
+  fetchPrograms();
+}, []);
+
+const fetchPrograms = async () => {
+  try {
+    const response = await API.getAllPrograms();
+
+    setPrograms(response.data.data);
+
+  } catch (error) {
+    console.error("Failed to fetch programs:", error);
+  }
+};
+
+const PROGRAM_OPTIONS = programs.map((program) => ({
+  value: program.program_id,
+  label: `${program.program_code} - ${program.program_name}`,
+}));
 
   if (!isOpen) return null;
 
@@ -37,7 +59,9 @@ export default function EditProfileModal({ profile, isOpen, onClose, onSave, isS
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-    const success = await onSave(formData);
+    const { Program, ...cleanProfile } = formData;
+
+const success = await onSave(cleanProfile);
     if (success) onClose();
   };
 
@@ -114,6 +138,13 @@ export default function EditProfileModal({ profile, isOpen, onClose, onSave, isS
                 options={GENDER_OPTIONS}
               />
             </div>
+
+            <Select
+  label="Program"
+  value={formData.program_id || ""}
+  onChange={handleChange("program_id")}
+  options={PROGRAM_OPTIONS}
+/>
 
             <Input label="Location" value={formData.location} onChange={handleChange("location")} />
 

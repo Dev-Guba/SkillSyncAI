@@ -11,6 +11,10 @@ const UserProfile = sequelize.define("UserProfile", {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
+    program_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
   first_name: DataTypes.STRING,
   last_name: DataTypes.STRING,
   email: {

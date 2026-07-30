@@ -28,6 +28,7 @@ export default function RoadmapPreview() {
   return (
     <div
   className="
+  h-full
     rounded-3xl
     border border-border
     bg-surface
