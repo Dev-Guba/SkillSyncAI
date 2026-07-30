@@ -1,7 +1,7 @@
 import express from "express";
 import Role from "../model/Role.js";
 import User from "../model/User.js";
-import {SkillSet, UserProfile, UserSkill, JobTitle} from "../model/relation.js";
+import {SkillSet, UserProfile, UserSkill, JobTitle, Program, ProgramSkills} from "../model/relation.js";
 import bcrypt from "bcrypt";
 
 export async function createUser(username, password, role_id, created_at, updated_at) {
@@ -29,6 +29,16 @@ export async function getSelfUser(user_id) {
     include: [
       {
         model: UserProfile,
+        include: [
+          {
+            model: Program,
+            include: [
+              {
+                model: SkillSet,
+              },
+            ],
+          },
+        ],
       },
 
       {

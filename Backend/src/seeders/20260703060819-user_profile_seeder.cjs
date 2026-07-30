@@ -6,9 +6,10 @@ module.exports = {
     await queryInterface.bulkInsert('User_Profile', [
       {
         user_id: 1,
+        program_id: 1, // BS Information Technology
         first_name: 'System',
         last_name: 'Administrator',
-        email : 'system.administrator@test.com',
+        email: 'system.administrator@test.com',
         phone_number: '09171234567',
         birth_date: new Date('1990-01-01'),
         gender: 'Male',
@@ -17,6 +18,7 @@ module.exports = {
       },
       {
         user_id: 2,
+        program_id: 5, // BS Software Engineering
         first_name: 'Maria',
         last_name: 'Santos',
         email: 'maria.santos@test.com',
@@ -28,6 +30,7 @@ module.exports = {
       },
       {
         user_id: 3,
+        program_id: 1, // BS Information Technology
         first_name: 'John',
         last_name: 'Reyes',
         email: 'john.reyes@test.com',
@@ -39,6 +42,7 @@ module.exports = {
       },
       {
         user_id: 4,
+        program_id: 1, // BS Information Technology
         first_name: 'James',
         last_name: 'David',
         email: 'james.david@test.com',

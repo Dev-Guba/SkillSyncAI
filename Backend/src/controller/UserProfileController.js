@@ -14,6 +14,7 @@ export async function createProfile(req, res) {
             gender,
             bio,
             location,
+            program_id
         } = req.body;
 
         const user_id = req.user.user_id;
@@ -34,7 +35,8 @@ export async function createProfile(req, res) {
             birth_date,
             gender,
             bio,
-            location
+            location,
+            program_id
         );
 
         return res.status(201).json({

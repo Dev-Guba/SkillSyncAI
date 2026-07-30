@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +19,8 @@ const GENDER_OPTIONS = [
 export default function ProfileSetupPage() {
   const navigate = useNavigate();
 
+  const [programs, setPrograms] = useState([]);
+
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
@@ -26,9 +28,29 @@ export default function ProfileSetupPage() {
     phone_number: "",
     birth_date: "",
     gender: "",
+    program_id: "",
     location: "",
     bio: "",
   });
+
+  useEffect(() => {
+    fetchPrograms();
+  }, []);
+
+  const fetchPrograms = async () => {
+    try {
+      const response = await API.getAllPrograms();
+
+      setPrograms(response.data.data);
+    } catch (error) {
+      console.error("Failed to fetch programs:", error);
+    }
+  };
+
+  const PROGRAM_OPTIONS = programs.map((program) => ({
+    value: program.program_id,
+    label: `${program.program_code} - ${program.program_name}`,
+  }));
 
   const handleChange = (field) => (e) =>
     setForm((prev) => ({
@@ -49,89 +71,74 @@ export default function ProfileSetupPage() {
       return alert("Email is required.");
     }
 
+    if (!form.program_id) {
+      return alert("Please select your program.");
+    }
+
     try {
       console.log(form);
+
       await API.createUserProfile(form);
-      
+      localStorage.setItem(
+        "selectedProgram",
+        form.program_id
+      );
 
       navigate("/skills");
     } catch (error) {
       alert(
         error.response?.data?.message ||
-        "Failed to save profile."
+          "Failed to save profile."
       );
     }
-};
+  };
 
   return (
     <section className="min-h-screen bg-white dark:bg-surface">
-
       <div className="mx-auto max-w-3xl px-6 py-12">
-
         {/* Logo */}
-
         <div className="flex justify-center">
-
           <img
             src={logo}
             alt="SkillSyncAI"
             className="h-14 w-14"
           />
-
         </div>
 
         {/* Progress */}
-
         <div className="mt-8">
-
           <p className="text-center text-sm font-semibold text-primary">
-
             Step 2 of 3
-
           </p>
 
-          <div className="mt-3 h-2 rounded-full bg-border overflow-hidden">
-
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-border">
             <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-[#5B4BFF] to-[#7A5CFF]" />
-
           </div>
-
         </div>
 
         {/* Heading */}
-
         <div className="mt-8 text-center">
-
           <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-violet-100">
-
             <User className="h-10 w-10 text-primary" />
-
           </div>
 
           <h1 className="text-4xl font-bold text-ink">
-
             Complete Your Profile
-
           </h1>
 
           <p className="mt-3 text-muted">
-
-            Tell us a little about yourself before we personalize your experience.
-
+            Tell us a little about yourself before we personalize your
+            experience.
           </p>
-
         </div>
 
         {/* Form */}
-
         <motion.div
           initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
           className="mt-10 rounded-3xl border border-border bg-surface p-8 shadow-lg"
         >
-
           <div className="grid gap-5 sm:grid-cols-2">
-
             <Input
               label="First Name"
               value={form.first_name}
@@ -143,35 +150,28 @@ export default function ProfileSetupPage() {
               value={form.last_name}
               onChange={handleChange("last_name")}
             />
-
           </div>
 
           <div className="mt-5">
-
             <Input
               label="Email"
               type="email"
               value={form.email}
               onChange={handleChange("email")}
             />
-
           </div>
 
           <div className="mt-5">
-
             <Input
               label="Phone Number"
               value={form.phone_number}
               onChange={handleChange("phone_number")}
             />
-
           </div>
 
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
-
             <Input
               label="Birth Date"
-              name="birth_date"
               type="date"
               value={form.birth_date}
               onChange={handleChange("birth_date")}
@@ -180,38 +180,35 @@ export default function ProfileSetupPage() {
             <Select
               label="Gender"
               value={form.gender}
-              onChange={(e) => {
-                console.log("Gender selected:", e.target.value);
-
-                setForm((prev) => ({
-                  ...prev,
-                  gender: e.target.value,
-                }));
-              }}
+              onChange={handleChange("gender")}
               options={GENDER_OPTIONS}
             />
-
           </div>
 
           <div className="mt-5">
+            <Select
+              label="Program"
+              value={form.program_id}
+              onChange={handleChange("program_id")}
+              options={PROGRAM_OPTIONS}
+            />
+          </div>
 
+          <div className="mt-5">
             <Input
               label="Location"
               value={form.location}
               onChange={handleChange("location")}
             />
-
           </div>
 
           <div className="mt-5">
-
             <Textarea
               label="Bio"
               placeholder="Tell us about yourself..."
               value={form.bio}
               onChange={handleChange("bio")}
             />
-
           </div>
 
           <Button
@@ -221,11 +218,8 @@ export default function ProfileSetupPage() {
           >
             Continue
           </Button>
-
         </motion.div>
-
       </div>
-
     </section>
   );
 }
