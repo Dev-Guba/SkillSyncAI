@@ -14,6 +14,8 @@ import ProgramSkills from "./ProgramSkills.js";
 
 import ProgramJobTitle from "./ProgramJobTitle.js";
 
+import Jobs from "./Jobs.js";
+
 
 /*
 |--------------------------------------------------------------------------
@@ -171,6 +173,22 @@ JobTitle.belongsToMany(Program,{
     through: ProgramJobTitle,
     foreignKey:"job_title_id",
     otherKey:"program_id"
+});
+
+/*
+|--------------------------------------------------------------------------
+| Jobs <-> JobTitle
+|--------------------------------------------------------------------------
+*/
+
+Jobs.belongsTo(JobTitle, {
+  foreignKey: "job_title_id",
+  as: "jobTitle",
+});
+
+JobTitle.hasMany(Jobs, {
+  foreignKey: "job_title_id",
+  as: "jobs",
 });
 
 

@@ -14,6 +14,7 @@ import jobTitle from "./src/routes/jobTitleRoutes.js";
 import userJobTitleRoutes from "./src/routes/UserJobTitleRoutes.js";
 import program from "./src/routes/programRoutes.js";
 import ai from "./src/routes/ai.route.js"
+import jobRoutes from "./src/routes/jobRoutes.js";
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use("/api/job", jobTitle)
 app.use("/api/user-job-title",userJobTitleRoutes);
 app.use("/api/program", program)
 app.use("/api/ai", ai);
+app.use("/api/jobs", jobRoutes);
 
 async function startServer() {
   try {

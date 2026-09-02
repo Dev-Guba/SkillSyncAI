@@ -2,7 +2,6 @@ import { getUserSkillsForAI } from "../services/UserSkillsServices.js";
 import { getJobSkillsForAI } from "../services/jobTitleServices.js";
 import { generateAIRecommendation } from "../services/ai.services.js";
 
-
 export async function handleAIRecommendation(req,res){
 
     try {

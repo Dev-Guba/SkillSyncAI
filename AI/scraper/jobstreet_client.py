@@ -12,7 +12,7 @@ BASE_URL = "https://api.parse.bot/scraper/7ba73304-777e-4b3d-bb9f-2122d5b0495c"
 def fetch_jobstreet_jobs(
     keywords="",
     location="Cebu",
-    limit=10
+    limit=50
 ):
 
     url = f"{BASE_URL}/search_jobs"
@@ -34,10 +34,20 @@ def fetch_jobstreet_jobs(
         params=params
     )
 
+    print("STATUS:", response.status_code)
+    print("REQUESTED LIMIT:", limit)
+
     if response.status_code != 200:
+        print("ERROR:", response.text)
+
         return {
             "error": response.text,
             "status_code": response.status_code
         }
 
-    return response.json()
+    data = response.json()
+
+    print("RAW RESPONSE COUNT:",
+          len(data.get("data", {}).get("results", [])))
+
+    return data

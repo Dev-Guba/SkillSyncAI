@@ -37,3 +37,19 @@ export async function getJobSkillsForAI(job_title_id){
     );
 
 }
+
+export async function getJobTitleForJobs(job_title_id) {
+
+const jobTitle = await JobTitle.findByPk(
+    job_title_id
+);
+
+if (!jobTitle) {
+    throw new Error("Job title not found");
+}
+
+return {
+    job_title_id: jobTitle.job_title_id,
+    job_title_name: jobTitle.job_title_name
+};
+}
