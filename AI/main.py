@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from skill_matching.matcher import calculate_skill_gap
 from recommendation.generator import generate_recommendation
 
@@ -70,19 +70,21 @@ def jobs():
     }
 
 @app.get("/cebu-jobs")
-def cebu_jobs():
+def cebu_jobs(
+    keywords: str = Query(""),
+    location: str = Query("Cebu"),
+    limit: int = Query(50)
+):
 
     raw_jobs = fetch_jobstreet_jobs(
-        keywords="",
-        location="Cebu",
-        limit=50
+        keywords=keywords,
+        location=location,
+        limit=limit
     )
-
 
     clean_jobs = parse_jobstreet_jobs(
         raw_jobs.get("data", {})
     )
-
 
     return {
         "success": True,

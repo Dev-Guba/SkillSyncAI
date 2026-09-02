@@ -20,6 +20,7 @@ export const API = {
 
     // JOBS
     getAllJobSkills: () => Http.get("/api/job/getAllJobTitle"),
+    getJobsByJobTitle: (jobTitleId) => Http.get( `/api/jobs/title/${jobTitleId}`),
 
     // USER JOB SKILLS
     createUserJobTitle: (data) => Http.post("/api/user-job-title/create-user-jobtitle",data),

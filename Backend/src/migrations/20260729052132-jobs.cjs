@@ -13,6 +13,17 @@ module.exports = {
         allowNull: false
       },
 
+      job_title_id: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Job_title',
+          key: 'job_title_id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+      },
+
       external_job_id: {
         type: Sequelize.STRING,
         allowNull: false,
@@ -20,17 +31,17 @@ module.exports = {
       },
 
       title: {
-        type: Sequelize.STRING(150),
+        type: Sequelize.STRING(255),
         allowNull: false
       },
 
       company: {
-        type: Sequelize.STRING(150),
+        type: Sequelize.STRING(255),
         allowNull: true
       },
 
       location: {
-        type: Sequelize.STRING(150),
+        type: Sequelize.STRING(255),
         allowNull: true
       },
 
