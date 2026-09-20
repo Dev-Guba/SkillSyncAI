@@ -4,6 +4,7 @@ export async function createUserProfile(
     user_id,
     first_name,
     last_name,
+    school,
     email,
     phone_number,
     birth_date,
@@ -17,6 +18,7 @@ export async function createUserProfile(
             user_id,
             first_name,
             last_name,
+            school,
             email,
             phone_number,
             birth_date,
@@ -44,6 +46,7 @@ export async function updateUserProfile(user_id, updates) {
     const clean = {
         first_name: updates.first_name,
         last_name: updates.last_name,
+        school: updates.school,
         email: updates.email,
         phone_number: updates.phone_number,
         birth_date: updates.birth_date,

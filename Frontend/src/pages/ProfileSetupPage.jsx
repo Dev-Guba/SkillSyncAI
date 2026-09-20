@@ -20,10 +20,12 @@ export default function ProfileSetupPage() {
   const navigate = useNavigate();
 
   const [programs, setPrograms] = useState([]);
+  const [programsLoading, setProgramsLoading] = useState(true);
 
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
+    school: "",
     email: "",
     phone_number: "",
     birth_date: "",
@@ -39,11 +41,15 @@ export default function ProfileSetupPage() {
 
   const fetchPrograms = async () => {
     try {
+      setProgramsLoading(true);
+
       const response = await API.getAllPrograms();
 
       setPrograms(response.data.data);
     } catch (error) {
       console.error("Failed to fetch programs:", error);
+    } finally {
+      setProgramsLoading(false);
     }
   };
 
@@ -67,6 +73,10 @@ export default function ProfileSetupPage() {
       return alert("Last name is required.");
     }
 
+    if (!form.school.trim()) {
+      return alert("Current school is required.");
+    }
+
     if (!form.email.trim()) {
       return alert("Email is required.");
     }
@@ -79,6 +89,7 @@ export default function ProfileSetupPage() {
       console.log(form);
 
       await API.createUserProfile(form);
+
       localStorage.setItem(
         "selectedProgram",
         form.program_id
@@ -96,6 +107,7 @@ export default function ProfileSetupPage() {
   return (
     <section className="min-h-screen bg-white dark:bg-surface">
       <div className="mx-auto max-w-3xl px-6 py-12">
+
         {/* Logo */}
         <div className="flex justify-center">
           <img
@@ -138,6 +150,7 @@ export default function ProfileSetupPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mt-10 rounded-3xl border border-border bg-surface p-8 shadow-lg"
         >
+          {/* Name */}
           <div className="grid gap-5 sm:grid-cols-2">
             <Input
               label="First Name"
@@ -152,6 +165,17 @@ export default function ProfileSetupPage() {
             />
           </div>
 
+          {/* Current School */}
+          <div className="mt-5">
+            <Input
+              label="Current School"
+              placeholder="Enter your current school"
+              value={form.school}
+              onChange={handleChange("school")}
+            />
+          </div>
+
+          {/* Email */}
           <div className="mt-5">
             <Input
               label="Email"
@@ -161,6 +185,7 @@ export default function ProfileSetupPage() {
             />
           </div>
 
+          {/* Phone Number */}
           <div className="mt-5">
             <Input
               label="Phone Number"
@@ -169,6 +194,7 @@ export default function ProfileSetupPage() {
             />
           </div>
 
+          {/* Birth Date & Gender */}
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
             <Input
               label="Birth Date"
@@ -185,15 +211,23 @@ export default function ProfileSetupPage() {
             />
           </div>
 
+          {/* Program */}
           <div className="mt-5">
             <Select
               label="Program"
               value={form.program_id}
               onChange={handleChange("program_id")}
               options={PROGRAM_OPTIONS}
+              disabled={programsLoading}
+              placeholder={
+                programsLoading
+                  ? "Loading programs..."
+                  : "Select your program"
+              }
             />
           </div>
 
+          {/* Location */}
           <div className="mt-5">
             <Input
               label="Location"
@@ -202,6 +236,7 @@ export default function ProfileSetupPage() {
             />
           </div>
 
+          {/* Bio */}
           <div className="mt-5">
             <Textarea
               label="Bio"
@@ -211,6 +246,7 @@ export default function ProfileSetupPage() {
             />
           </div>
 
+          {/* Continue */}
           <Button
             onClick={handleContinue}
             className="mt-8 w-full"

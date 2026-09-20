@@ -38,6 +38,10 @@ module.exports = {
         type: Sequelize.STRING(50),
         allowNull: false,
       },
+      school: {
+        type: Sequelize.STRING(150),
+        allowNull: true,
+      },
       email : {
         type: Sequelize.STRING(100),
         allowNull: false,

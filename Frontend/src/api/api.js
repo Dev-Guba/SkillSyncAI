@@ -37,6 +37,10 @@ export const API = {
 
     // AI RECOMMENDATION
     getAIRecommendation: (data) => Http.post("/api/ai/recommend", data),
+    getCareerRecommendations: (data) => Http.post("/api/ai/recommend/careers", data),
+    getLearningRecommendations: (data) => Http.post("/api/ai/recommend/learning", data),
+    getSkillForecasts: (program_id, periods) =>Http.get(`/api/trends/skills/forecast?program_id=${program_id}&periods=${periods}`),
+    importJobsByJobTitle: (job_title_id) => Http.post(`/api/jobs/title/${job_title_id}/import`),
 
 
 }

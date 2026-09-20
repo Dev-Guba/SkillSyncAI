@@ -22,11 +22,11 @@ const navItems = [
     label: "My Profile",
     icon: User,
   },
-  {
-    to: "/dashboard/skill-gap",
-    label: "Skill Gap Analyzer",
-    icon: Target,
-  },
+  // {
+  //   to: "/dashboard/skill-gap",
+  //   label: "Skill Gap Analyzer",
+  //   icon: Target,
+  // },
   {
     to: "/dashboard/recommendations",
     label: "Recommended Skills",
@@ -42,11 +42,11 @@ const navItems = [
     label: "Career Roadmap",
     icon: Map,
   },
-  {
-    to: "/dashboard/curriculum",
-    label: "Curriculum Alignment",
-    icon: BookOpen,
-  },
+  // {
+  //   to: "/dashboard/curriculum",
+  //   label: "Curriculum Alignment",
+  //   icon: BookOpen,
+  // },
   {
     to: "/dashboard/settings",
     label: "Settings",

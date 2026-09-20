@@ -13,6 +13,10 @@ const UserProfile = sequelize.define("UserProfile", {
   },
   first_name: DataTypes.STRING,
   last_name: DataTypes.STRING,
+  school: {
+    type: DataTypes.STRING(150),
+    allowNull: true,
+  },
   email: {
     type: DataTypes.STRING(100),
     allowNull: false,

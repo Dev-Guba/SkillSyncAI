@@ -13,7 +13,7 @@ const actions = [
     description:
       "Discover which skills you need to reach your target career.",
     icon: Brain,
-    to: "/dashboard/skill-gap",
+    to: "/dashboard/recommendations",
   },
   {
     title: "Improve your profile",

@@ -15,6 +15,7 @@ import ProgramSkills from "./ProgramSkills.js";
 import ProgramJobTitle from "./ProgramJobTitle.js";
 
 import Jobs from "./Jobs.js";
+import JobSkill from "./JobSkill.js";
 
 
 /*
@@ -191,6 +192,57 @@ JobTitle.hasMany(Jobs, {
   as: "jobs",
 });
 
+/*
+|--------------------------------------------------------------------------
+| Jobs <-> SkillSet
+|--------------------------------------------------------------------------
+*/
+
+Jobs.belongsToMany(SkillSet, {
+  through: JobSkill,
+  foreignKey: "job_id",
+  otherKey: "skill_set_id",
+});
+
+SkillSet.belongsToMany(Jobs, {
+  through: JobSkill,
+  foreignKey: "skill_set_id",
+  otherKey: "job_id",
+});
+
+/*
+|--------------------------------------------------------------------------
+| Jobs <-> JobSkill
+|--------------------------------------------------------------------------
+*/
+
+Jobs.hasMany(JobSkill, {
+  foreignKey: "job_id",
+  as: "jobSkills",
+  onDelete: "CASCADE",
+});
+
+JobSkill.belongsTo(Jobs, {
+  foreignKey: "job_id",
+  as: "job",
+});
+
+/*
+|--------------------------------------------------------------------------
+| SkillSet <-> JobSkill
+|--------------------------------------------------------------------------
+*/
+
+SkillSet.hasMany(JobSkill, {
+  foreignKey: "skill_set_id",
+  as: "jobSkills",
+});
+
+JobSkill.belongsTo(SkillSet, {
+  foreignKey: "skill_set_id",
+  as: "skill",
+});
+
 
 export {
   Role,
@@ -206,4 +258,6 @@ export {
   Program,
   ProgramSkills,
   ProgramJobTitle,
+  Jobs,
+  JobSkill,
 };

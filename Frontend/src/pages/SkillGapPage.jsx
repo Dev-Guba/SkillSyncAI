@@ -23,11 +23,6 @@ export default function SkillGapPage() {
     try {
       console.log("CURRENT USER:", user);
 
-      /*
-      Expected:
-      user.user_id
-      user.JobTitles[0].job_title_id
-      */
       const jobTitle = user.JobTitles?.[0];
 
       if (!jobTitle) {
@@ -36,57 +31,149 @@ export default function SkillGapPage() {
         return;
       }
 
+      // Unique cache key for this user's selected career
+      const cacheKey =
+        `skillGap_${user.user_id}_${jobTitle.job_title_id}`;
+
+      // ==========================================
+      // CHECK CACHE
+      // ==========================================
+
+      const cachedData =
+        sessionStorage.getItem(cacheKey);
+
+      if (cachedData) {
+        console.log(
+          "===== USING CACHED SKILL GAP ====="
+        );
+
+        const parsedData =
+          JSON.parse(cachedData);
+
+        setAiData(parsedData);
+        setLoading(false);
+
+        return;
+      }
+
+      // ==========================================
+      // NO CACHE → ANALYZE
+      // ==========================================
+
       const payload = {
         user_id: user.user_id,
         job_title_id: jobTitle.job_title_id,
       };
 
-      console.log("AI REQUEST:", payload);
+      console.log(
+        "===== ANALYZING SKILL GAP ====="
+      );
 
-      const response = await API.getAIRecommendation(payload);
+      console.log(
+        "AI REQUEST:",
+        payload
+      );
 
-      console.log("AI RESPONSE:", response.data);
+      const response =
+        await API.getAIRecommendation(
+          payload
+        );
 
-      setAiData(response.data.data);
+      console.log(
+        "AI RESPONSE:",
+        response.data
+      );
+
+      const result =
+        response.data.data;
+
+      // Save result
+      sessionStorage.setItem(
+        cacheKey,
+        JSON.stringify(result)
+      );
+
+      setAiData(result);
+
     } catch (error) {
-      console.error("AI loading error:", error.response?.data || error);
+
+      console.error(
+        "AI loading error:",
+        error.response?.data ||
+        error
+      );
+
     } finally {
+
       setLoading(false);
+
     }
   };
 
   if (loading) {
-    return <section className="p-6">Loading AI analysis...</section>;
+    return (
+      <section className="p-6">
+        Loading AI analysis...
+      </section>
+    );
   }
 
   if (!aiData) {
     return (
       <section className="p-6 space-y-4">
-        <h1 className="text-3xl font-bold">Skill Gap Analyzer</h1>
+
+        <h1 className="text-3xl font-bold">
+          Skill Gap Analyzer
+        </h1>
+
         <p className="text-muted">
-          No AI analysis available yet. Please complete your profile and
-          select a target career.
+          No AI analysis available yet. Please
+          complete your profile and select a
+          target career.
         </p>
+
       </section>
     );
   }
 
   return (
     <section className="space-y-8 p-6">
+
       <div>
-        <h1 className="text-3xl font-bold">Skill Gap Analyzer</h1>
+
+        <h1 className="text-3xl font-bold">
+          Skill Gap Analyzer
+        </h1>
+
         <p className="mt-2 text-muted">
-          Understand your current skills and what you need to improve for
-          your career goal.
+          Understand your current skills and what
+          you need to improve for your career goal.
         </p>
+
       </div>
 
-      <SkillGapScore score={aiData.analysis?.match_percentage || 0} />
+      <SkillGapScore
+        score={
+          aiData.analysis?.match_percentage || 0
+        }
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <MissingSkills skills={aiData.analysis?.missing_skills || []} />
-        <AIRecommendation recommendation={aiData.recommendation || null} />
+
+        <MissingSkills
+          skills={
+            aiData.analysis?.missing_skills || []
+          }
+        />
+
+        <AIRecommendation
+          recommendation={
+            aiData.recommendation || null
+          }
+        />
+
       </div>
+
     </section>
   );
 }

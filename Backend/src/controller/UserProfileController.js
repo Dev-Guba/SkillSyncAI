@@ -8,6 +8,7 @@ export async function createProfile(req, res) {
         const {
             first_name,
             last_name,
+            school,
             email,
             phone_number,
             birth_date,
@@ -30,6 +31,7 @@ export async function createProfile(req, res) {
             user_id,
             first_name,
             last_name,
+            school,
             email,
             phone_number,
             birth_date,

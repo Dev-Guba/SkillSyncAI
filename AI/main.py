@@ -1,4 +1,6 @@
 from fastapi import FastAPI, Query
+from pydantic import BaseModel
+
 from skill_matching.matcher import calculate_skill_gap
 from recommendation.generator import generate_recommendation
 
@@ -13,8 +15,42 @@ from scraper.job_parser import parse_jobstreet_jobs
 # EXCEL FILE
 from scraper.export_excel import export_jobs_to_excel
 
+# Skills AI Recommendation Engine
+from skill_matching.matcher import recommend_careers
+
+# Missing Skills Learning Recommendation
+from recommendation.learning_recommendation import (
+    generate_learning_recommendations
+)
+
+# Cleaning and extracting skills from job descriptions
+from skill_matching.skill_extractor import extract_skills
+
+# Trend Forecasting
+from trend_model.forecaster import forecast_skill_demand
 
 app = FastAPI()
+
+class Career(BaseModel):
+    job_title_id: int
+    job_title_name: str
+    required_skills: list[str]
+
+class CareerRecommendationRequest(BaseModel):
+    user_skills: list[str]
+    careers: list[Career]
+
+class LearningRecommendationRequest(BaseModel):
+    job_title: str
+    missing_skills: list[str]
+
+class BatchSkillExtractionRequest(BaseModel):
+    jobs: list[dict]
+    skill_dictionary: list[str]
+
+class SkillForecastRequest(BaseModel):
+    history: list[dict]
+    periods: int = 3
 
 
 @app.get("/")
@@ -114,4 +150,86 @@ def export_jobs():
         "message": "Jobs exported",
         "file": file,
         "count": len(jobs)
+    }
+
+@app.post("/recommend-careers")
+def recommend_career_paths(
+    data: CareerRecommendationRequest
+):
+
+    careers = [
+        career.model_dump()
+        for career in data.careers
+    ]
+
+    result = recommend_careers(
+        data.user_skills,
+        careers
+    )
+
+    return {
+        "success": True,
+        "data": result
+    }
+
+@app.post("/learning-recommendations")
+def recommend_learning(
+    request: LearningRecommendationRequest
+):
+    try:
+        result = generate_learning_recommendations(
+            request.job_title,
+            request.missing_skills
+        )
+
+        return {
+            "success": True,
+            "data": result
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "message": str(e)
+        }
+
+@app.post("/extract-job-skills")
+def extract_job_skills(
+    request: BatchSkillExtractionRequest
+):
+    processed_jobs = []
+
+    for job in request.jobs:
+
+        description = job.get(
+            "description",
+            ""
+        )
+
+        skills = extract_skills(
+            description,
+            request.skill_dictionary
+        )
+
+        processed_jobs.append({
+            **job,
+            "skills": skills
+        })
+
+    return {
+        "success": True,
+        "jobs": processed_jobs
+    }
+
+@app.post("/forecast-skill")
+def forecast_skill(request: SkillForecastRequest):
+
+    predictions = forecast_skill_demand(
+        request.history,
+        request.periods
+    )
+
+    return {
+        "success": True,
+        "forecast": predictions
     }
