@@ -1,127 +1,34 @@
-import { LogOut, Trash2 } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
-
-export default function DangerZone(){
-
+export default function DangerZone() {
     const { logout } = useAuth();
     const navigate = useNavigate();
 
-
     const handleLogout = () => {
-
         logout();
-
         navigate("/login");
-
     };
 
-
     return (
-
-        <div
-        className="
-        rounded-2xl
-        border
-        border-red-300
-        bg-red-50
-        p-6
-        dark:bg-red-950/20
-        "
-        >
-
-
-            <h3
-            className="
-            font-bold
-            text-red-600
-            "
-            >
-                Danger Zone
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+            <h3 className="font-bold text-gray-900 dark:text-gray-100">
+                Account Session
             </h3>
-
-
-            <p className="
-            mt-2
-            text-sm
-            text-muted
-            ">
-                Manage account actions
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                Manage your active session
             </p>
 
-
-
-            <div className="
-            mt-5
-            flex
-            flex-col
-            gap-3
-            ">
-
-
-
+            <div className="mt-5">
                 <button
-                onClick={handleLogout}
-                className="
-                flex
-                items-center
-                justify-center
-                gap-2
-                rounded-xl
-                bg-red-600
-                px-4
-                py-2
-                font-medium
-                text-white
-                transition
-                hover:bg-red-700
-                "
+                    onClick={handleLogout}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                 >
-
-                    <LogOut size={18}/>
-
+                    <LogOut size={18} />
                     Logout
-
                 </button>
-
-
-
-
-                <button
-
-                className="
-                flex
-                items-center
-                justify-center
-                gap-2
-                rounded-xl
-                border
-                border-red-400
-                px-4
-                py-2
-                font-medium
-                text-red-600
-                transition
-                hover:bg-red-100
-                dark:hover:bg-red-900/30
-                "
-
-                >
-
-                    <Trash2 size={18}/>
-
-                    Delete Account
-
-                </button>
-
-
-
             </div>
-
-
         </div>
-
-    )
-
+    );
 }
