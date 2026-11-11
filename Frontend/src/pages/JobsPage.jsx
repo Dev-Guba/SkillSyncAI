@@ -94,6 +94,154 @@ function hasSalary(job) {
 }
 
 // ======================================================
+// #19: SKILL EXTRACTION & MATCHING HELPERS
+// ======================================================
+
+function normalizeSkillName(item) {
+  if (!item) return "";
+  if (typeof item === "string") return clean(item);
+  if (typeof item === "object") {
+    return clean(
+      item.skill_set_name ||
+        item.skill_name ||
+        item.name ||
+        item.SkillSet?.skill_set_name ||
+        item.Skill?.skill_name ||
+        ""
+    );
+  }
+  return "";
+}
+
+function extractStudentSkills(userObj) {
+  if (!userObj) return [];
+
+  const rawList =
+    userObj.SkillSets ||
+    userObj.UserSkills ||
+    userObj.skills ||
+    userObj.user_skills ||
+    userObj.UserProfile?.SkillSets ||
+    [];
+
+  const names = Array.isArray(rawList)
+    ? rawList.map(normalizeSkillName).filter(Boolean)
+    : [];
+
+  return [...new Set(names)];
+}
+
+function extractStoredJobSkills(job) {
+  if (!job) return [];
+
+  const rawCandidates =
+    job.extracted_skills ??
+    job.extractedSkills ??
+    job.job_skills ??
+    job.jobSkills ??
+    job.JobSkills ??
+    job.SkillSets ??
+    job.skills ??
+    job.required_skills;
+
+  let list = [];
+
+  if (Array.isArray(rawCandidates)) {
+    list = rawCandidates.map(normalizeSkillName).filter(Boolean);
+  } else if (typeof rawCandidates === "string") {
+    const trimmed = rawCandidates.trim();
+    if (trimmed.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          list = parsed.map(normalizeSkillName).filter(Boolean);
+        }
+      } catch {
+        list = trimmed.split(",").map(clean).filter(Boolean);
+      }
+    } else if (trimmed) {
+      list = trimmed.split(",").map(clean).filter(Boolean);
+    }
+  }
+
+  return [...new Set(list)];
+}
+
+function computeJobSkillMatch(job, studentSkills = []) {
+  const storedJobSkills = extractStoredJobSkills(job);
+  const studentLowerMap = new Map(
+    studentSkills.map((s) => [s.toLowerCase(), s])
+  );
+
+  // If the job has stored/extracted skills, compare against student's skills
+  if (storedJobSkills.length > 0) {
+    const matched = [];
+    const missing = [];
+
+    storedJobSkills.forEach((jobSkill) => {
+      const lower = jobSkill.toLowerCase();
+      const directMatch = studentLowerMap.get(lower);
+
+      if (directMatch) {
+        matched.push(jobSkill);
+      } else {
+        // Also check partial word match (e.g., "React.js" vs "React")
+        const partial = studentSkills.some((stuSkill) => {
+          const sLow = stuSkill.toLowerCase();
+          return (
+            sLow === lower ||
+            (sLow.length >= 3 && lower.includes(sLow)) ||
+            (lower.length >= 3 && sLow.includes(lower))
+          );
+        });
+
+        if (partial) {
+          matched.push(jobSkill);
+        } else {
+          missing.push(jobSkill);
+        }
+      }
+    });
+
+    const percentage = Math.round(
+      (matched.length / storedJobSkills.length) * 100
+    );
+
+    return {
+      totalJobSkills: storedJobSkills.length,
+      matchedSkills: matched,
+      missingSkills: missing,
+      matchPercentage: percentage,
+    };
+  }
+
+  // Fallback: if a job record has no stored skill array yet, check which of the student's skills appear in the title/description
+  if (studentSkills.length > 0) {
+    const text = `${job.title || ""} ${job.description || ""}`.toLowerCase();
+    const matched = studentSkills.filter((stuSkill) =>
+      text.includes(stuSkill.toLowerCase())
+    );
+    const percentage = Math.round(
+      (matched.length / studentSkills.length) * 100
+    );
+
+    return {
+      totalJobSkills: studentSkills.length,
+      matchedSkills: matched,
+      missingSkills: [],
+      matchPercentage: percentage,
+    };
+  }
+
+  return {
+    totalJobSkills: 0,
+    matchedSkills: [],
+    missingSkills: [],
+    matchPercentage: null,
+  };
+}
+
+// ======================================================
 // BADGE
 // ======================================================
 
@@ -110,6 +258,9 @@ function Badge({
 
     success:
       "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400",
+
+    warning:
+      "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400",
   };
 
   return (
@@ -127,7 +278,7 @@ function Badge({
 // JOB CARD
 // ======================================================
 
-function JobCard({ job }) {
+function JobCard({ job, studentSkills }) {
   const [expanded, setExpanded] =
     useState(false);
 
@@ -138,6 +289,24 @@ function JobCard({ job }) {
 
   const remote = isRemote(job);
 
+  // #19: Compare stored job skills with student's skills
+  const {
+    totalJobSkills,
+    matchedSkills,
+    missingSkills,
+    matchPercentage,
+  } = useMemo(
+    () => computeJobSkillMatch(job, studentSkills),
+    [job, studentSkills]
+  );
+
+  const matchTone =
+    matchPercentage >= 70
+      ? "success"
+      : matchPercentage >= 40
+      ? "warning"
+      : "default";
+
   return (
     <article className="rounded-2xl border border-border bg-surface p-5 shadow-soft transition hover:border-primary/30">
       {/* HEADER */}
@@ -146,9 +315,17 @@ function JobCard({ job }) {
 
         <div className="min-w-0 flex-1">
 
-          <h2 className="text-lg font-bold text-ink">
-            {job.title || "Untitled position"}
-          </h2>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h2 className="text-lg font-bold text-ink">
+              {job.title || "Untitled position"}
+            </h2>
+
+            {matchPercentage !== null && (
+              <Badge tone={matchTone}>
+                {matchPercentage}% Skill Match
+              </Badge>
+            )}
+          </div>
 
           <p className="mt-1 text-sm font-medium text-ink">
             {job.company ||
@@ -225,6 +402,47 @@ function JobCard({ job }) {
 
         </div>
       </div>
+
+      {/* #19: SKILL MATCH BREAKDOWN */}
+      {totalJobSkills > 0 && (
+        <div className="mt-4 rounded-xl border border-border/70 bg-surface-alt/40 p-3.5">
+          <div className="flex items-center justify-between text-xs font-semibold text-ink">
+            <span>
+              Matched {matchedSkills.length} of {totalJobSkills} job skills
+            </span>
+            <span className="text-primary">{matchPercentage}%</span>
+          </div>
+
+          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-border">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[#5B4BFF] to-[#7A5CFF] transition-all"
+              style={{ width: `${Math.min(100, Math.max(0, matchPercentage || 0))}%` }}
+            />
+          </div>
+
+          {(matchedSkills.length > 0 || missingSkills.length > 0) && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {matchedSkills.map((skill) => (
+                <span
+                  key={`match-${skill}`}
+                  className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+                >
+                  ✓ {skill}
+                </span>
+              ))}
+
+              {missingSkills.map((skill) => (
+                <span
+                  key={`miss-${skill}`}
+                  className="rounded-full border border-border bg-surface px-2.5 py-0.5 text-xs text-muted"
+                >
+                  {skill}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* DESCRIPTION */}
 
@@ -340,6 +558,9 @@ export default function JobsPage() {
   const [jobs, setJobs] =
     useState([]);
 
+  const [studentSkills, setStudentSkills] =
+    useState([]);
+
   const [jobTitle, setJobTitle] =
     useState(null);
 
@@ -383,15 +604,6 @@ export default function JobsPage() {
         // 1. GET CURRENT USER
         // ----------------------------------------------
 
-        console.log(
-          "========== JOB DEBUG =========="
-        );
-
-        console.log(
-          "AuthContext user:",
-          user
-        );
-
         const userResponse =
           await API.getMe();
 
@@ -399,15 +611,13 @@ export default function JobsPage() {
           userResponse.data?.user ||
           userResponse.data?.data?.user;
 
-        console.log(
-          "GET /me user:",
-          currentUser
+        // #19: Store student's skills for comparison
+        const extractedUserSkills = extractStudentSkills(
+          currentUser || user
         );
-
-        console.log(
-          "Job Titles:",
-          currentUser?.JobTitles
-        );
+        if (!isStale()) {
+          setStudentSkills(extractedUserSkills);
+        }
 
         // ----------------------------------------------
         // 2. FIND SELECTED JOB TITLE
@@ -417,21 +627,6 @@ export default function JobsPage() {
           currentUser?.JobTitles?.[0] ||
           user?.JobTitles?.[0] ||
           null;
-
-        console.log(
-          "Selected Job:",
-          selectedJob
-        );
-
-        console.log(
-          "Job Title ID:",
-          selectedJob?.job_title_id
-        );
-
-        console.log(
-          "Job Title Name:",
-          selectedJob?.job_title_name
-        );
 
         // ----------------------------------------------
         // 3. NO JOB TITLE
@@ -455,11 +650,6 @@ export default function JobsPage() {
         // ----------------------------------------------
 
         if (!selectedJob.job_title_id) {
-          console.error(
-            "Invalid job title:",
-            selectedJob
-          );
-
           if (!isStale()) {
             setJobTitle(
               selectedJob
@@ -485,79 +675,34 @@ export default function JobsPage() {
         // 5. IMPORT JOBS
         // ----------------------------------------------
 
-        console.log(
-          "================================"
-        );
-
-        console.log(
-          "IMPORTING JOBS"
-        );
-
-        console.log(
-          "Job Title ID:",
-          selectedJob.job_title_id
-        );
-
-        console.log(
-          "================================"
-        );
-
         if (!isStale()) {
           setImporting(true);
         }
 
         try {
-          const importResponse =
-            await API.importJobsByJobTitle(
-              selectedJob.job_title_id
-            );
-
-          console.log(
-            "Import response:",
-            importResponse.data
+          await API.importJobsByJobTitle(
+            selectedJob.job_title_id
           );
-
         } catch (importError) {
-
           console.error(
             "Job import failed:",
             importError.response?.data ||
               importError
           );
-
-          /*
-           * We do NOT immediately stop here.
-           *
-           * There may already be jobs stored in the
-           * database, so we continue and try to fetch them.
-           */
-
         } finally {
-
           if (!isStale()) {
             setImporting(false);
           }
-
         }
 
         // ----------------------------------------------
         // 6. FETCH IMPORTED JOBS
         // ----------------------------------------------
 
-        console.log(
-          "Fetching saved jobs for:",
-          selectedJob.job_title_id
-        );
-
         const response =
           await API.getJobsByJobTitle(
             selectedJob.job_title_id
           );
-
-        console.log(
-          "Jobs API response:",
-          response.data
-        );
 
         if (isStale()) {
           return;
@@ -567,16 +712,6 @@ export default function JobsPage() {
           response.data?.data?.jobs ||
           response.data?.jobs ||
           [];
-
-        console.log(
-          "Fetched jobs:",
-          fetchedJobs
-        );
-
-        console.log(
-          "Job count:",
-          fetchedJobs.length
-        );
 
         setJobs(
           fetchedJobs
@@ -1066,6 +1201,7 @@ export default function JobsPage() {
                   `${job.title}-${index}`
                 }
                 job={job}
+                studentSkills={studentSkills}
               />
             )
           )}

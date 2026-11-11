@@ -16,11 +16,15 @@ const GENDER_OPTIONS = [
   { value: "Other", label: "Other" },
 ];
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_REGEX = /^\+?[\d\s\-()]{7,15}$/;
+
 export default function ProfileSetupPage() {
   const navigate = useNavigate();
 
   const [programs, setPrograms] = useState([]);
   const [programsLoading, setProgramsLoading] = useState(true);
+  const [errors, setErrors] = useState({});
 
   const [form, setForm] = useState({
     first_name: "",
@@ -58,37 +62,71 @@ export default function ProfileSetupPage() {
     label: `${program.program_code} - ${program.program_name}`,
   }));
 
-  const handleChange = (field) => (e) =>
+  const handleChange = (field) => (e) => {
     setForm((prev) => ({
       ...prev,
       [field]: e.target.value,
     }));
+    setErrors((prev) => ({
+      ...prev,
+      [field]: undefined,
+    }));
+  };
 
-  const handleContinue = async () => {
+  // #18: Basic email and phone validation
+  const validateForm = () => {
+    const nextErrors = {};
+
     if (!form.first_name.trim()) {
-      return alert("First name is required.");
+      nextErrors.first_name = "First name is required.";
     }
 
     if (!form.last_name.trim()) {
-      return alert("Last name is required.");
+      nextErrors.last_name = "Last name is required.";
     }
 
     if (!form.school.trim()) {
-      return alert("Current school is required.");
+      nextErrors.school = "Current school is required.";
     }
 
-    if (!form.email.trim()) {
-      return alert("Email is required.");
+    const trimmedEmail = form.email.trim();
+    if (!trimmedEmail) {
+      nextErrors.email = "Email is required.";
+    } else if (!EMAIL_REGEX.test(trimmedEmail)) {
+      nextErrors.email = "Please enter a valid email address (e.g., student@school.edu).";
+    }
+
+    const trimmedPhone = form.phone_number.trim();
+    const digitsOnly = trimmedPhone.replace(/\D/g, "");
+    if (!trimmedPhone) {
+      nextErrors.phone_number = "Phone number is required.";
+    } else if (
+      !PHONE_REGEX.test(trimmedPhone) ||
+      digitsOnly.length < 7 ||
+      digitsOnly.length > 15
+    ) {
+      nextErrors.phone_number = "Please enter a valid phone number (e.g., 09171234567).";
     }
 
     if (!form.program_id) {
-      return alert("Please select your program.");
+      nextErrors.program_id = "Please select your program.";
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleContinue = async () => {
+    if (!validateForm()) {
+      return;
     }
 
     try {
-      console.log(form);
-
-      await API.createUserProfile(form);
+      await API.createUserProfile({
+        ...form,
+        email: form.email.trim(),
+        phone_number: form.phone_number.trim(),
+      });
 
       localStorage.setItem(
         "selectedProgram",
@@ -156,12 +194,14 @@ export default function ProfileSetupPage() {
               label="First Name"
               value={form.first_name}
               onChange={handleChange("first_name")}
+              error={errors.first_name}
             />
 
             <Input
               label="Last Name"
               value={form.last_name}
               onChange={handleChange("last_name")}
+              error={errors.last_name}
             />
           </div>
 
@@ -172,6 +212,7 @@ export default function ProfileSetupPage() {
               placeholder="Enter your current school"
               value={form.school}
               onChange={handleChange("school")}
+              error={errors.school}
             />
           </div>
 
@@ -180,8 +221,10 @@ export default function ProfileSetupPage() {
             <Input
               label="Email"
               type="email"
+              placeholder="you@example.com"
               value={form.email}
               onChange={handleChange("email")}
+              error={errors.email}
             />
           </div>
 
@@ -189,8 +232,11 @@ export default function ProfileSetupPage() {
           <div className="mt-5">
             <Input
               label="Phone Number"
+              type="tel"
+              placeholder="09171234567"
               value={form.phone_number}
               onChange={handleChange("phone_number")}
+              error={errors.phone_number}
             />
           </div>
 
@@ -219,6 +265,7 @@ export default function ProfileSetupPage() {
               onChange={handleChange("program_id")}
               options={PROGRAM_OPTIONS}
               disabled={programsLoading}
+              error={errors.program_id}
               placeholder={
                 programsLoading
                   ? "Loading programs..."
