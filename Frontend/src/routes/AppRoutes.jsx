@@ -45,6 +45,10 @@ export default function AppRoutes() {
 
       <Route path="/login" element={<AuthPage mode="login" />} />
       <Route path="/register" element={<AuthPage mode="register" />} />
+      <Route
+        path="/forgot-password"
+        element={<AuthPage mode="forgot-password" />}
+      />
 
       <Route
         path="/profile-setup"

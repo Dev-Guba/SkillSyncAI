@@ -1,9 +1,11 @@
 import Http from "./Http";
 
 export const API = {
-    // AUTHS (LOGIN AND REGISTER)
+    // AUTHS (LOGIN, REGISTER, FORGOT PASSWORD)
     login: (data) => Http.post("/api/auth/login", data),
     register: (data) => Http.post("/api/auth/register", data),
+    forgotPassword: (data) => Http.post("/api/auth/forgot-password", data),
+    resetPassword: (data) => Http.post("/api/auth/reset-password", data),
     
     // USER
     getMe: () => Http.get("/api/user/me"),
@@ -23,6 +25,7 @@ export const API = {
 
     // USER JOB SKILLS
     createUserJobTitle: (data) => Http.post("/api/user-job-title/create-user-jobtitle", data),
+    updateUserJobTitle: (data) => Http.put("/api/user-job-title/update-user-jobtitle", data),
 
     // INTEREST
     getAllInterests: () => Http.get("/api/interest/get-interests"),
