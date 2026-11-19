@@ -26,12 +26,13 @@ export default function Navbar() {
       <nav className="mx-auto max-w-7xl px-8">
         <div className="flex h-20 items-center justify-between">
 
-          <Link to="/" onClick={scrollToTop} className="flex items-center gap-3 shrink-0">
-            <img src={logo} alt="SkillSyncAI" className="h-10 w-10 object-contain" />
-            <span className="text-2xl font-extrabold tracking-tight text-ink">
-              SkillSyncAI
-            </span>
-          </Link>
+<Link to="/" onClick={scrollToTop} className="flex items-center shrink-0">
+  <img
+    src={logo}
+    alt="SkillSyncAI"
+    className="h-10 w-auto max-w-[160px] object-contain"
+  />
+</Link>
 
           <div className="hidden md:flex items-center gap-10">
             {navLinks.map((link) =>

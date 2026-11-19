@@ -45,17 +45,13 @@ export default function Footer() {
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-5">
           {/* Brand */}
           <div className="lg:col-span-2">
-            <Link to="/" className="flex items-center gap-3">
-              <img
-                src={logo}
-                alt="SkillSyncAI"
-                className="h-10 w-10"
-              />
-
-              <span className="text-xl font-bold text-slate-900">
-                SkillSyncAI
-              </span>
-            </Link>
+<Link to="/" className="inline-flex items-center">
+  <img
+    src={logo}
+    alt="SkillSyncAI"
+    className="h-10 w-auto max-w-[170px] object-contain"
+  />
+</Link>
 
             <p className="mt-4 max-w-sm text-slate-500">
               AI-powered career matching that connects

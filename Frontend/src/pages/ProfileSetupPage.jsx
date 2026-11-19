@@ -146,14 +146,14 @@ export default function ProfileSetupPage() {
     <section className="min-h-screen bg-white dark:bg-surface">
       <div className="mx-auto max-w-3xl px-6 py-12">
 
-        {/* Logo */}
-        <div className="flex justify-center">
-          <img
-            src={logo}
-            alt="SkillSyncAI"
-            className="h-14 w-14"
-          />
-        </div>
+{/* Logo */}
+<div className="flex justify-center">
+  <img
+    src={logo}
+    alt="SkillSyncAI"
+    className="h-14 w-auto max-w-[220px] object-contain"
+  />
+</div>
 
         {/* Progress */}
         <div className="mt-8">

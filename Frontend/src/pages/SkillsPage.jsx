@@ -355,21 +355,14 @@ export default function SkillsPage() {
     <section className="relative min-h-screen bg-white pb-32 dark:bg-surface">
       <div className="mx-auto max-w-3xl px-6 pt-16">
         {/* HEADER */}
-        <div className="mb-10 flex flex-col items-center">
-          <img src={logo} className="h-14 w-14" alt="SkillSync AI Logo" />
-
-          <p className="text-sm font-semibold text-primary">
-            Step 3 of 3
-          </p>
-
-          <h1 className="mt-5 text-center text-3xl font-bold">
-            Select your skills, interests & career
-          </h1>
-
-          <p className="mt-3 text-center text-muted">
-            We'll recommend careers based on your skills and interests.
-          </p>
-        </div>
+{/* Logo */}
+<div className="flex justify-center">
+  <img
+    src={logo}
+    alt="SkillSyncAI"
+    className="h-14 w-auto max-w-[220px] object-contain"
+  />
+</div>
 
         {/* SEARCH */}
         <div className="mb-10 flex h-14 items-center rounded-2xl border px-4">
