@@ -19,20 +19,16 @@ export default function AuthLeftPanel() {
       xl:px-16
     ">
 
-      {/* Brand */}
-      <div className="absolute top-10">
-        <div className="flex items-center gap-3">
-          <img
-            src={logo}
-            className="h-11 w-11 object-contain"
-            alt="SkillSyncAI"
-          />
-
-          <h2 className="text-xl font-bold text-ink">
-            SkillSyncAI
-          </h2>
-        </div>
-      </div>
+{/* Brand */}
+<div className="absolute top-10">
+  <div className="flex items-center">
+    <img
+      src={logo}
+      alt="SkillSyncAI"
+      className="h-11 w-auto max-w-[180px] object-contain"
+    />
+  </div>
+</div>
 
 
       {/* Main Content */}

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
+import { X, AlertCircle } from "lucide-react";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import Textarea from "@/components/common/Textarea";
@@ -14,8 +14,17 @@ const GENDER_OPTIONS = [
 ];
 
 export default function EditProfileModal({ profile, isOpen, onClose, onSave, isSaving }) {
-  const [formData, setFormData] = useState(profile);
+  const [formData, setFormData] = useState(profile || {});
   const [errors, setErrors] = useState({});
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      setFormData(profile);
+      setErrors({});
+      setShowConfirm(false);
+    }
+  }, [profile, isOpen]);
 
   if (!isOpen) return null;
 
@@ -28,17 +37,34 @@ export default function EditProfileModal({ profile, isOpen, onClose, onSave, isS
     const next = {};
     if (!formData.first_name?.trim()) next.first_name = "First name is required";
     if (!formData.last_name?.trim()) next.last_name = "Last name is required";
-    if (!formData.email?.trim()) next.email = "Email is required";
-    else if (!/^\S+@\S+\.\S+$/.test(formData.email)) next.email = "Enter a valid email";
+    if (!formData.email?.trim()) {
+      next.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      next.email = "Enter a valid email";
+    }
+    if (
+      formData.phone_number?.trim() &&
+      !/^\+?[\d\s\-()]{7,15}$/.test(formData.phone_number.trim())
+    ) {
+      next.phone_number = "Enter a valid phone number";
+    }
     setErrors(next);
     return Object.keys(next).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!validate()) return;
+    // #16: Show confirmation prompt before saving profile edits
+    setShowConfirm(true);
+  };
+
+  const handleConfirmSave = async () => {
     const success = await onSave(formData);
-    if (success) onClose();
+    if (success) {
+      setShowConfirm(false);
+      onClose();
+    }
   };
 
   return (
@@ -73,13 +99,13 @@ export default function EditProfileModal({ profile, isOpen, onClose, onSave, isS
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input
                 label="First Name"
-                value={formData.first_name}
+                value={formData.first_name || ""}
                 onChange={handleChange("first_name")}
                 error={errors.first_name}
               />
               <Input
                 label="Last Name"
-                value={formData.last_name}
+                value={formData.last_name || ""}
                 onChange={handleChange("last_name")}
                 error={errors.last_name}
               />
@@ -88,7 +114,7 @@ export default function EditProfileModal({ profile, isOpen, onClose, onSave, isS
             <Input
               label="Email"
               type="email"
-              value={formData.email}
+              value={formData.email || ""}
               onChange={handleChange("email")}
               error={errors.email}
             />
@@ -96,8 +122,9 @@ export default function EditProfileModal({ profile, isOpen, onClose, onSave, isS
             <Input
               label="Phone Number"
               type="tel"
-              value={formData.phone_number}
+              value={formData.phone_number || ""}
               onChange={handleChange("phone_number")}
+              error={errors.phone_number}
             />
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -109,13 +136,17 @@ export default function EditProfileModal({ profile, isOpen, onClose, onSave, isS
               />
               <Select
                 label="Gender"
-                value={formData.gender}
+                value={formData.gender || ""}
                 onChange={handleChange("gender")}
                 options={GENDER_OPTIONS}
               />
             </div>
 
-            <Input label="Location" value={formData.location} onChange={handleChange("location")} />
+            <Input
+              label="Location"
+              value={formData.location || ""}
+              onChange={handleChange("location")}
+            />
 
             <Textarea
               label="Bio"
@@ -125,14 +156,49 @@ export default function EditProfileModal({ profile, isOpen, onClose, onSave, isS
               placeholder="Tell others a bit about yourself..."
             />
 
-            <div className="mt-2 flex justify-end gap-3">
-              <Button type="button" variant="ghost" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="primary" disabled={isSaving}>
-                {isSaving ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
+            {/* #16: Confirmation Prompt before saving */}
+            {showConfirm ? (
+              <div className="mt-2 rounded-xl border border-primary/30 bg-primary/5 p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-ink">
+                      Confirm Profile Changes
+                    </p>
+                    <p className="mt-1 text-xs text-muted">
+                      Are you sure you want to save these changes to your profile?
+                    </p>
+                    <div className="mt-3 flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setShowConfirm(false)}
+                        disabled={isSaving}
+                      >
+                        Go Back
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="primary"
+                        onClick={handleConfirmSave}
+                        disabled={isSaving}
+                      >
+                        {isSaving ? "Saving..." : "Yes, Save Changes"}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-2 flex justify-end gap-3">
+                <Button type="button" variant="ghost" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="primary" disabled={isSaving}>
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            )}
           </form>
         </motion.div>
       </motion.div>

@@ -3,11 +3,19 @@ import { useNavigate } from "react-router-dom";
 
 import LoginForm from "./LoginForm";
 import RegisterForm from "./RegisterForm";
+import ForgotPasswordForm from "./ForgotPasswordForm";
 
 export default function AuthCard({ mode }) {
   const navigate = useNavigate();
 
   const isLogin = mode === "login";
+  const isForgot = mode === "forgot-password";
+
+  const getHeading = () => {
+    if (isForgot) return "Reset password";
+    if (isLogin) return "Welcome back";
+    return "Create your account";
+  };
 
   return (
     <motion.div
@@ -30,108 +38,89 @@ export default function AuthCard({ mode }) {
           damping: 25,
         },
       }}
-className="
-w-full
-max-w-[440px]
-rounded-[32px]
-border
-border-border
-bg-surface
-p-6
-sm:p-8
-shadow-soft-lg
-"
+      className="
+        w-full
+        max-w-[440px]
+        rounded-[32px]
+        border
+        border-border
+        bg-surface
+        p-6
+        sm:p-8
+        shadow-soft-lg
+      "
     >
-
-      {/* Switch */}
-      <div className="mb-8">
-
-        <div
-          className="
-            relative
-            flex
-            rounded-2xl
-            bg-surface-alt
-            p-1
-          "
-        >
-
-          <motion.div
-            layoutId="auth-switch"
-            transition={{
-              type: "spring",
-              stiffness: 350,
-              damping: 30,
-            }}
-            className={`
-              absolute
-              inset-y-1
-              w-[calc(50%-4px)]
-              rounded-xl
-              bg-surface
-              shadow-soft
-              ${
-                isLogin
-                  ? "left-1"
-                  : "left-[calc(50%+2px)]"
-              }
-            `}
-          />
-
-
-          <button
-            type="button"
-            onClick={() => navigate("/login")}
-            className={`
+      {/* Switch (Hidden on Forgot Password for a focused flow) */}
+      {!isForgot && (
+        <div className="mb-8">
+          <div
+            className="
               relative
-              z-10
-              flex-1
-              rounded-xl
-              py-3
-              text-sm
-              font-semibold
-              transition-colors
-              ${
-                isLogin
-                  ? "text-primary"
-                  : "text-muted"
-              }
-            `}
+              flex
+              rounded-2xl
+              bg-surface-alt
+              p-1
+            "
           >
-            Log In
-          </button>
+            <motion.div
+              layoutId="auth-switch"
+              transition={{
+                type: "spring",
+                stiffness: 350,
+                damping: 30,
+              }}
+              className={`
+                absolute
+                inset-y-1
+                w-[calc(50%-4px)]
+                rounded-xl
+                bg-surface
+                shadow-soft
+                ${isLogin ? "left-1" : "left-[calc(50%+2px)]"}
+              `}
+            />
 
+            <button
+              type="button"
+              onClick={() => navigate("/login")}
+              className={`
+                relative
+                z-10
+                flex-1
+                rounded-xl
+                py-3
+                text-sm
+                font-semibold
+                transition-colors
+                ${isLogin ? "text-primary" : "text-muted"}
+              `}
+            >
+              Log In
+            </button>
 
-          <button
-            type="button"
-            onClick={() => navigate("/register")}
-            className={`
-              relative
-              z-10
-              flex-1
-              rounded-xl
-              py-3
-              text-sm
-              font-semibold
-              transition-colors
-              ${
-                !isLogin
-                  ? "text-primary"
-                  : "text-muted"
-              }
-            `}
-          >
-            Register
-          </button>
-
+            <button
+              type="button"
+              onClick={() => navigate("/register")}
+              className={`
+                relative
+                z-10
+                flex-1
+                rounded-xl
+                py-3
+                text-sm
+                font-semibold
+                transition-colors
+                ${!isLogin ? "text-primary" : "text-muted"}
+              `}
+            >
+              Register
+            </button>
+          </div>
         </div>
-
-      </div>
-
+      )}
 
       {/* Heading */}
       <AnimatePresence mode="wait">
-
         <motion.div
           key={mode}
           initial={{
@@ -150,7 +139,6 @@ shadow-soft-lg
             duration: 0.25,
           }}
         >
-
           <h1
             className="
               text-3xl
@@ -160,18 +148,10 @@ shadow-soft-lg
               sm:text-4xl
             "
           >
-            {isLogin
-              ? "Welcome back"
-              : "Create your account"}
+            {getHeading()}
           </h1>
-
-
-
-
         </motion.div>
-
       </AnimatePresence>
-
 
       {/* Form */}
       <motion.div
@@ -182,14 +162,14 @@ shadow-soft-lg
           damping: 30,
         }}
       >
-
-        {isLogin
-          ? <LoginForm />
-          : <RegisterForm />}
-
+        {isForgot ? (
+          <ForgotPasswordForm />
+        ) : isLogin ? (
+          <LoginForm />
+        ) : (
+          <RegisterForm />
+        )}
       </motion.div>
-
-
     </motion.div>
   );
 }
