@@ -15,20 +15,6 @@ module.exports = {
         updated_at: new Date()
       },
       {
-        role_id: 2,
-        username: 'faculty1',
-        password: await bcrypt.hash('faculty123', saltRounds),
-        created_at: new Date(),
-        updated_at: new Date()
-      },
-      {
-        role_id: 2,
-        username: 'faculty2',
-        password: await bcrypt.hash('faculty123', saltRounds),
-        created_at: new Date(),
-        updated_at: new Date()
-      },
-      {
         role_id: 3,
         username: 'student1',
         password: await bcrypt.hash('student123', saltRounds),

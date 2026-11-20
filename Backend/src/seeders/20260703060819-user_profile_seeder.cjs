@@ -28,30 +28,6 @@ module.exports = {
         bio: 'Faculty member specializing in Software Engineering.',
         location: 'Cebu City'
       },
-      {
-        user_id: 3,
-        program_id: 1, // BS Information Technology
-        first_name: 'John',
-        last_name: 'Reyes',
-        email: 'john.reyes@test.com',
-        phone_number: '09192345678',
-        birth_date: new Date('1992-09-20'),
-        gender: 'Male',
-        bio: 'Faculty member teaching Web Development and Databases.',
-        location: 'Mandaue City'
-      },
-      {
-        user_id: 4,
-        program_id: 1, // BS Information Technology
-        first_name: 'James',
-        last_name: 'David',
-        email: 'james.david@test.com',
-        phone_number: '09951234567',
-        birth_date: new Date('2004-09-13'),
-        gender: 'Male',
-        bio: 'BSIT student passionate about Backend Development and AI.',
-        location: 'Lapu-Lapu City'
-      }
     ]);
   },
 

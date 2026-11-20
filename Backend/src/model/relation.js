@@ -17,6 +17,8 @@ import ProgramJobTitle from "./ProgramJobTitle.js";
 import Jobs from "./Jobs.js";
 import JobSkill from "./JobSkill.js";
 
+import PasswordResetOTP from "./PasswordResetOTP.js";
+
 
 /*
 |--------------------------------------------------------------------------
@@ -243,6 +245,21 @@ JobSkill.belongsTo(SkillSet, {
   as: "skill",
 });
 
+/*
+|--------------------------------------------------------------------------
+| User <-> PasswordResetOTP
+|--------------------------------------------------------------------------
+*/
+
+User.hasMany(PasswordResetOTP, {
+    foreignKey: "user_id",
+    onDelete: "CASCADE",
+});
+
+PasswordResetOTP.belongsTo(User, {
+    foreignKey: "user_id",
+});
+
 
 export {
   Role,
@@ -260,4 +277,5 @@ export {
   ProgramJobTitle,
   Jobs,
   JobSkill,
+  PasswordResetOTP,
 };

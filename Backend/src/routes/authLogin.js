@@ -1,11 +1,20 @@
-import express from "express";
-
-const router = express.Router();
-
 import { login } from "../controller/auth/loginAuth.js";
 import { registerAccount } from "../controller/auth/registerAccount.js";
 
+// Password recovery controller
+import {
+    requestOTP,
+    verifyOTP,
+    resetPassword
+} from "../controller/auth/passwordReset.js";
+
+// Login and Registration
 router.post("/login", login);
 router.post("/register", registerAccount);
+
+// Password Recovery
+router.post("/forgot-password", requestOTP);
+router.post("/verify-otp", verifyOTP);
+router.post("/reset-password", resetPassword);
 
 export default router;
