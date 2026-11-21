@@ -1,5 +1,6 @@
 import { login } from "../controller/auth/loginAuth.js";
 import { registerAccount } from "../controller/auth/registerAccount.js";
+import express from "express";
 
 // Password recovery controller
 import {
@@ -7,8 +8,9 @@ import {
     verifyOTP,
     resetPassword
 } from "../controller/auth/passwordReset.js";
+const router = express.Router();
 
-// Login and Registration
+// Login and Registration   
 router.post("/login", login);
 router.post("/register", registerAccount);
 

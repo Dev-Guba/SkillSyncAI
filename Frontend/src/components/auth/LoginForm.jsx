@@ -89,9 +89,7 @@ export default function LoginForm() {
     try {
       const response = await login(formData);
       const user = response.user;
-      console.log(user);
 
-      // Route Admin (role_id === 1) directly to /admin
       const isAdminUser =
         Number(user?.role_id) === 1 ||
         user?.Role?.role_name?.toLowerCase() === "admin" ||
@@ -198,7 +196,7 @@ export default function LoginForm() {
         <button
           type="button"
           onClick={() => navigate("/forgot-password")}
-          className="text-sm font-medium text-primary hover:underline"
+          className="text-sm font-semibold text-primary hover:underline"
         >
           Forgot password?
         </button>

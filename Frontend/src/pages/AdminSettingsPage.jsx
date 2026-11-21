@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import ThemeToggle from "@/components/common/ThemeToggle";
 import Button from "@/components/common/Button";
+import ResetPasswordSettings from "@/components/settings/ResetPasswordSettings";
 import { useAuth } from "@/context/AuthContext";
 
 const ADMIN_LOCAL_KEYS = [
@@ -49,7 +50,8 @@ export default function AdminSettingsPage() {
         </p>
         <h1 className="mt-1 text-3xl font-bold text-ink">Admin Settings</h1>
         <p className="mt-1 text-sm text-muted">
-          Manage appearance, frontend workspace overrides, and your active session.
+          Manage appearance, password recovery, frontend workspace overrides,
+          and your active session.
         </p>
       </div>
 
@@ -70,6 +72,9 @@ export default function AdminSettingsPage() {
         <ThemeToggle />
       </div>
 
+      {/* Password & Recovery (6-Digit Gmail OTP) */}
+      <ResetPasswordSettings />
+
       {/* Local Overrides Reset */}
       <div className="flex flex-col justify-between gap-4 rounded-2xl border border-border bg-surface p-6 shadow-soft sm:flex-row sm:items-center">
         <div className="flex items-start gap-3">
@@ -81,7 +86,8 @@ export default function AdminSettingsPage() {
               Reset Frontend Workspace Overrides
             </h2>
             <p className="mt-0.5 max-w-xl text-sm text-muted">
-              Clears locally saved admin edits (users, custom skills, interests, and program mappings) so pages reload fresh from the backend APIs.
+              Clears locally saved admin edits (users, custom skills, interests,
+              and program mappings) so pages reload fresh from the backend APIs.
             </p>
             {cleared && (
               <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600">

@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   ShieldCheck,
   LogOut,
+  X,
 } from "lucide-react";
 import logo from "../../assets/logos/logo.png";
 import { useAuth } from "@/context/AuthContext";
@@ -65,36 +66,51 @@ const adminNavItems = [
   },
 ];
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ isMobileOpen = false, onClose }) {
   const navigate = useNavigate();
   const { setAdminMode, logout } = useAuth();
 
   const handleBackToUserDashboard = () => {
     setAdminMode?.(false);
+    onClose?.();
     navigate("/dashboard");
   };
 
   const handleLogout = () => {
     setAdminMode?.(false);
+    onClose?.();
     logout();
     navigate("/login");
   };
 
-  return (
-    <aside className="hidden w-72 shrink-0 border-r border-border bg-surface sm:flex sm:flex-col">
+  const sidebarContent = (
+    <div className="flex h-full flex-col bg-surface">
       {/* Logo */}
-      <div className="px-6 py-6">
-        <div className="flex items-center">
-          <img
-            src={logo}
-            alt="SkillSyncAI"
-            className="h-10 w-auto max-w-[170px] object-contain"
-          />
+      <div className="flex items-start justify-between px-6 py-6">
+        <div>
+          <div className="flex items-center">
+            <img
+              src={logo}
+              alt="SkillSyncAI"
+              className="h-10 w-auto max-w-[170px] object-contain"
+            />
+          </div>
+          <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            <span>Admin Console</span>
+          </div>
         </div>
-        <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
-          <ShieldCheck className="h-3.5 w-3.5" />
-          <span>Admin Console</span>
-        </div>
+
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close admin menu"
+            className="rounded-lg p-1.5 text-muted transition hover:bg-surface-alt hover:text-ink lg:hidden"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
       </div>
 
       {/* Navigation */}
@@ -104,21 +120,17 @@ export default function AdminSidebar() {
             key={to}
             to={to}
             end={end}
+            onClick={() => onClose?.()}
             className={({ isActive }) =>
-              `
-              group flex items-center gap-3 rounded-xl px-4 py-2.5
-              text-sm font-medium transition-colors duration-200
-
-              ${
+              `group flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors duration-200 ${
                 isActive
                   ? "bg-primary text-white shadow-sm"
                   : "text-ink/70 hover:bg-primary/10 hover:text-primary"
-              }
-              `
+              }`
             }
           >
-            <Icon className="h-4.5 w-4.5 transition-transform duration-200 group-hover:scale-105" />
-            {label}
+            <Icon className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-105" />
+            <span>{label}</span>
           </NavLink>
         ))}
 
@@ -129,8 +141,8 @@ export default function AdminSidebar() {
           onClick={handleBackToUserDashboard}
           className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:bg-surface-alt hover:text-ink"
         >
-          <ArrowLeft className="h-4.5 w-4.5" />
-          Back to User View
+          <ArrowLeft className="h-5 w-5 shrink-0" />
+          <span>Back to User View</span>
         </button>
 
         <button
@@ -138,8 +150,8 @@ export default function AdminSidebar() {
           onClick={handleLogout}
           className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-950/30"
         >
-          <LogOut className="h-4.5 w-4.5" />
-          Log Out
+          <LogOut className="h-5 w-5 shrink-0" />
+          <span>Log Out</span>
         </button>
       </nav>
 
@@ -147,6 +159,32 @@ export default function AdminSidebar() {
       <div className="border-t border-border p-4">
         <p className="text-xs text-muted">© 2026 SkillSyncAI</p>
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Desktop / Tablet Sidebar */}
+      <aside className="sticky top-0 hidden h-screen w-72 shrink-0 border-r border-border bg-surface lg:block">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile / Split-Screen Drawer */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 z-50 flex lg:hidden"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs"
+            onClick={onClose}
+          />
+          <aside className="relative z-10 h-full w-72 max-w-[85vw] border-r border-border bg-surface shadow-soft-lg">
+            {sidebarContent}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }

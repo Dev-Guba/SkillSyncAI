@@ -1,12 +1,13 @@
 import Http from "./Http";
 
 export const API = {
-    // AUTHS (LOGIN, REGISTER, FORGOT PASSWORD)
+    // AUTHS (LOGIN, REGISTER, FORGOT PASSWORD & OTP)
     login: (data) => Http.post("/api/auth/login", data),
     register: (data) => Http.post("/api/auth/register", data),
     forgotPassword: (data) => Http.post("/api/auth/forgot-password", data),
+    verifyOTP: (data) => Http.post("/api/auth/verify-otp", data),
     resetPassword: (data) => Http.post("/api/auth/reset-password", data),
-    
+
     // USER
     getMe: () => Http.get("/api/user/me"),
 
