@@ -1,5 +1,5 @@
 import { useState } from "react";
-
+import ResetPasswordSettings from "@/components/settings/ResetPasswordSettings";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useAuth } from "@/context/AuthContext";
 
@@ -83,7 +83,7 @@ profile={profile}
 
 <AccountSettings user={user}/>
 
-
+<ResetPasswordSettings />
 
 {/* DANGER */}
 
