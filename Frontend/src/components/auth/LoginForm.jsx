@@ -36,7 +36,7 @@ const item = {
 
 export default function LoginForm() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, setAdminMode } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -90,6 +90,22 @@ export default function LoginForm() {
       const response = await login(formData);
       const user = response.user;
       console.log(user);
+
+      // Route Admin (role_id === 1) directly to /admin
+      const isAdminUser =
+        Number(user?.role_id) === 1 ||
+        user?.Role?.role_name?.toLowerCase() === "admin" ||
+        user?.role?.toLowerCase() === "admin" ||
+        user?.username?.toLowerCase() === "admin";
+
+      if (isAdminUser) {
+        setAdminMode?.(true);
+        navigate("/admin");
+        return;
+      }
+
+      setAdminMode?.(false);
+
       if (!user.UserProfile) {
         navigate("/profile-setup");
         return;
@@ -99,6 +115,7 @@ export default function LoginForm() {
         navigate("/skills");
         return;
       }
+
       navigate("/dashboard");
     } catch (error) {
       setErrors({

@@ -3,122 +3,142 @@ import API from "../api/api.js";
 import { STORAGE_KEYS } from "../utils/storageKeys.js";
 
 const AuthContext = createContext();
+const ADMIN_MODE_KEY = "skillsync_frontend_admin_mode";
 
 export function AuthProvider({ children }) {
-    const [user, setUser] = useState(null);
-    const [token, setToken] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const storedAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
-
-        if (storedAuth) {
-            try {
-                const auth = JSON.parse(storedAuth);
-
-                setUser(auth.user);
-                setToken(auth.token);
-            } catch {
-                localStorage.removeItem(STORAGE_KEYS.AUTH);
-            }
-        }
-
-        setLoading(false);
-    }, []);
-
-        const register = async (data) => {
-            const response = await API.register(data);
-
-            const auth = {
-                token: response.data.token,
-                user: response.data.user,
-            };
-
-            localStorage.setItem(
-                STORAGE_KEYS.AUTH,
-                JSON.stringify(auth)
-            );
-
-            setToken(auth.token);
-            setUser(auth.user);
-
-            return response;
-        };
-
-    const login = async (data) => {
-        const response = await API.login(data);
-
-        const auth = {
-            token: response.data.token,
-            user: response.data.user,
-        };
-
-        localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(auth));
-
-        setToken(auth.token);
-
-        const me = await API.getMe();
-
-        setUser(me.data.user);
-
-        localStorage.setItem(
-            STORAGE_KEYS.AUTH,
-            JSON.stringify({
-                token: auth.token,
-                user: me.data.user,
-            })
-        );
-
-        return me.data;
-    };
-    const refreshUser = async () => {
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(() => {
     try {
-        const me = await API.getMe();
-
-        setUser(me.data.user);
-
-        localStorage.setItem(
-            STORAGE_KEYS.AUTH,
-            JSON.stringify({
-                token,
-                user: me.data.user,
-            })
-        );
-
-        return me.data.user;
-
-    } catch (error) {
-        console.error("Failed to refresh user:", error);
-        throw error;
+      return localStorage.getItem(ADMIN_MODE_KEY) === "true";
+    } catch {
+      return false;
     }
-};
+  });
 
-    const logout = () => {
+  useEffect(() => {
+    const storedAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
+
+    if (storedAuth) {
+      try {
+        const auth = JSON.parse(storedAuth);
+
+        setUser(auth.user);
+        setToken(auth.token);
+      } catch {
         localStorage.removeItem(STORAGE_KEYS.AUTH);
+      }
+    }
 
-        setUser(null);
-        setToken(null);
+    setLoading(false);
+  }, []);
+
+  const setAdminMode = (enabled) => {
+    const nextValue = Boolean(enabled);
+    setIsAdmin(nextValue);
+    try {
+      localStorage.setItem(ADMIN_MODE_KEY, String(nextValue));
+    } catch {
+      // ignore storage errors
+    }
+  };
+
+  const register = async (data) => {
+    const response = await API.register(data);
+
+    const auth = {
+      token: response.data.token,
+      user: response.data.user,
     };
 
-    return (
-        <AuthContext.Provider
-            value={{
-                user,
-                setUser,
-                token,
-                loading,
-                register,
-                login,
-                refreshUser,
-                logout,
-                isAuthenticated: !!token,
-            }}
-        >
-            {children}
-        </AuthContext.Provider>
+    localStorage.setItem(
+      STORAGE_KEYS.AUTH,
+      JSON.stringify(auth)
     );
+
+    setToken(auth.token);
+    setUser(auth.user);
+
+    return response;
+  };
+
+  const login = async (data) => {
+    const response = await API.login(data);
+
+    const auth = {
+      token: response.data.token,
+      user: response.data.user,
+    };
+
+    localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(auth));
+
+    setToken(auth.token);
+
+    const me = await API.getMe();
+
+    setUser(me.data.user);
+
+    localStorage.setItem(
+      STORAGE_KEYS.AUTH,
+      JSON.stringify({
+        token: auth.token,
+        user: me.data.user,
+      })
+    );
+
+    return me.data;
+  };
+
+  const refreshUser = async () => {
+    try {
+      const me = await API.getMe();
+
+      setUser(me.data.user);
+
+      localStorage.setItem(
+        STORAGE_KEYS.AUTH,
+        JSON.stringify({
+          token,
+          user: me.data.user,
+        })
+      );
+
+      return me.data.user;
+    } catch (error) {
+      console.error("Failed to refresh user:", error);
+      throw error;
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem(STORAGE_KEYS.AUTH);
+
+    setUser(null);
+    setToken(null);
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        setUser,
+        token,
+        loading,
+        isAdmin,
+        setAdminMode,
+        register,
+        login,
+        refreshUser,
+        logout,
+        isAuthenticated: !!token,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-    return useContext(AuthContext);
+  return useContext(AuthContext);
 }
