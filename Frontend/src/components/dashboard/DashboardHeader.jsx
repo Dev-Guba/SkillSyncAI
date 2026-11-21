@@ -17,7 +17,7 @@ export default function DashboardHeader() {
       </p>
 
       <h1 className="text-3xl font-bold text-ink sm:text-4xl">
-        Good to see you, {fullName} 👋
+        Hello! {fullName} 👋
       </h1>
 
       <p className="max-w-xl text-muted">
