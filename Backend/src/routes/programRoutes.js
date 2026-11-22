@@ -3,7 +3,7 @@ import {
     handleGetAllProgram,
     handleGetProgramSkills,
     handleGetProgramJobTitles
-} from "../controller/programController.js";
+} from "../controller/ProgramController.js";
 
 const router = express.Router();
 
