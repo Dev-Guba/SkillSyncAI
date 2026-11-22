@@ -1,3 +1,4 @@
+
 import db from "./src/config/db.js";
 import "./src/model/relation.js";
 
@@ -13,16 +14,23 @@ import interest from "./src/routes/userInterestRoute.js";
 import jobTitle from "./src/routes/jobTitleRoutes.js";
 import userJobTitleRoutes from "./src/routes/UserJobTitleRoutes.js";
 import program from "./src/routes/programRoutes.js";
-import ai from "./src/routes/ai.route.js"
+import ai from "./src/routes/ai.route.js";
 import jobRoutes from "./src/routes/jobRoutes.js";
 import trendRoutes from "./src/routes/trendRoutes.js";
 
 const app = express();
 
+const PORT = process.env.PORT || 3000;
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
     exposedHeaders: ["Content-Disposition"],
   })
@@ -30,35 +38,38 @@ app.use(
 
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "SkillSyncAI Backend API is running!",
+  });
+});
+
 app.use("/api/auth", login);
 app.use("/api/user", create);
 app.use("/api/user-profile", profile);
 app.use("/api/skills", skills);
 app.use("/api/user-skills", userSkills);
 app.use("/api/interest", interest);
-app.use("/api/job", jobTitle)
-app.use("/api/user-job-title",userJobTitleRoutes);
-app.use("/api/program", program)
+app.use("/api/job", jobTitle);
+app.use("/api/user-job-title", userJobTitleRoutes);
+app.use("/api/program", program);
 app.use("/api/ai", ai);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/trends", trendRoutes);
 
 async function startServer() {
   try {
-    // Test database connection
     await db.authenticate();
-    console.log("✅ Connected to MySQL successfully.");
 
-    // Create all tables
-    await db.sync();
-    console.log("✅ Database synchronized.");
+    console.log("Connected to MySQL successfully.");
 
-    app.listen(3000, () => {
-      console.log("🚀 Server is running on port 3000");
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`SkillSyncAI backend running on port ${PORT}`);
     });
   } catch (error) {
-    console.error("❌ Failed to start server:");
-    console.error(error);
+    console.error("Failed to start server:", error);
+    process.exit(1);
   }
 }
 
