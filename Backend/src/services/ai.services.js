@@ -6,8 +6,7 @@ import SkillSet from "../model/SkillSet.js";
 
 import { getAllSkillSets } from "./SkillSetServices.js";
 
-const AI_URL =
-"http://127.0.0.1:8000";
+const AI_URL = process.env.AI_SERVICE_URL || "http://127.0.0.1:8000";
 
 export async function generateAIRecommendation(
 userSkills,
