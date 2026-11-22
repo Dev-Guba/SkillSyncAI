@@ -34,11 +34,11 @@ const adminNavItems = [
     label: "Manage Skills",
     icon: Sparkles,
   },
-  {
-    to: "/admin/interests",
-    label: "Manage Interests",
-    icon: Heart,
-  },
+  // {
+  //   to: "/admin/interests",
+  //   label: "Manage Interests",
+  //   icon: Heart,
+  // },
   {
     to: "/admin/mappings",
     label: "Program Mappings",

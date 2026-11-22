@@ -10,6 +10,7 @@ export const API = {
 
     // USER
     getMe: () => Http.get("/api/user/me"),
+    getAllUsers: () => Http.get("/api/user/all"),
 
     // USER PROFILE
     createUserProfile: (data) => Http.post("/api/user-profile/create-profile", data),
@@ -19,6 +20,11 @@ export const API = {
     getallSkillSet: () => Http.get("/api/skills/skillsets"),
     createUserSkills: (data) => Http.post("/api/user-skills/create-skill", data),
     updateUserSkills: (data) => Http.put("/api/user-skills/update-skill", data),
+
+    // Admin Skill Management
+    createSkillSet: (data) => Http.post("/api/skills/skillsets", data),
+    renameSkillSet: (skillId, data) =>
+    Http.put(`/api/skills/skillsets/${skillId}`, data),
 
     // JOBS
     getAllJobSkills: () => Http.get("/api/job/getAllJobTitle"),

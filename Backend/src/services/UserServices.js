@@ -58,3 +58,15 @@ export async function getSelfUser(user_id) {
     ],
   });
 }
+
+export async function getAllUsers() {
+    return await User.findAll({
+        attributes: [
+            "user_id",
+            "username",
+            "role_id",
+            "created_at"
+        ],
+        order: [["created_at", "DESC"]]
+    });
+}

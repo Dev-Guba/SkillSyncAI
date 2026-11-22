@@ -278,7 +278,7 @@ export async function extractJobSkills(jobs) {
     }
 }
 
-export async function forecastSkillDemand(history, periods = 3) {
+export async function forecastSkillDemand(history, periods = 36) {
     try {
         const response = await axios.post(
             `${AI_URL}/forecast-skill`,

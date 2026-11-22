@@ -1,6 +1,7 @@
 import { 
     createUser,
-    getSelfUser
+    getSelfUser,
+    getAllUsers
  } from "../services/UserServices.js";
 import User from "../model/User.js";
 import Role from "../model/Role.js";
@@ -53,6 +54,25 @@ try{
         return res.status(500).json({
             success: false,
             message: "Failed to fetch user"
+        });
+    }
+}
+
+export async function getUsers(req, res) {
+    try {
+        const users = await getAllUsers();
+
+        return res.status(200).json({
+            success: true,
+            users
+        });
+
+    } catch (error) {
+        console.error("Get users error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to retrieve users."
         });
     }
 }

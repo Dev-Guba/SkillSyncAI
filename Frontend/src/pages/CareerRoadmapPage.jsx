@@ -1,18 +1,10 @@
+
 import { useMemo, useState } from "react";
 import API from "../api/api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
-const PERIOD_PRESETS = [3, 6, 9, 12];
-const MAX_PERIODS = 12;
-
-/*
- * Colors
- * ------
- * Surfaces, text, borders and the accent use the app's theme tokens
- * (bg-surface, text-ink, text-muted, border-border, primary), so they follow
- * light/dark mode automatically, the same way the dashboard does.
- * Only status colors (green/red) need explicit dark: variants.
- */
+const PERIOD_PRESETS = [12, 24, 36, 48, 60];
+const MAX_PERIODS = 60;
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -24,9 +16,11 @@ function statusStyle(status) {
   if (/^(rising|increas|grow|up|emerging)/.test(s)) {
     return "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300";
   }
+
   if (/^(declin|decreas|fall|down|shrink)/.test(s)) {
     return "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300";
   }
+
   return "border-border text-muted";
 }
 
@@ -51,9 +45,11 @@ function getChange(item) {
 
 function formatDelta(change) {
   if (!change) return "";
+
   if (change.pct === null) {
     return change.diff > 0 ? `up ${change.diff}` : "no change";
   }
+
   return `${change.pct > 0 ? "+" : ""}${change.pct}%`;
 }
 
@@ -65,8 +61,17 @@ function deltaColor(diff) {
 
 const jobsLabel = (n) => `${n} job${n === 1 ? "" : "s"}`;
 
+function formatPeriod(months) {
+  if (months % 12 === 0) {
+    const years = months / 12;
+    return `${years} ${years === 1 ? "year" : "years"}`;
+  }
+
+  return `${months} months`;
+}
+
 /* ------------------------------------------------------------------ */
-/* Demand chart (history solid, forecast dashed on a tinted band)      */
+/* Demand chart                                                        */
 /* ------------------------------------------------------------------ */
 
 function DemandChart({ history = [], forecast = [], skill }) {
@@ -80,31 +85,40 @@ function DemandChart({ history = [], forecast = [], skill }) {
     label: h.month,
     value: Number(h.demand) || 0,
   }));
+
   const fore = forecast.map((f) => ({
     label: f.month,
     value: Number(f.predicted_demand) || 0,
   }));
+
   const all = [...hist, ...fore];
 
   if (all.length === 0) return null;
 
   const max = Math.max(...all.map((p) => p.value), 1);
+
   const x = (i) =>
     all.length > 1
       ? padX + (i * (W - padX * 2)) / (all.length - 1)
       : W / 2;
-  const y = (v) => padTop + (1 - v / max) * (H - padTop - padBottom);
+
+  const y = (v) =>
+    padTop + (1 - v / max) * (H - padTop - padBottom);
 
   const toPath = (pts) =>
     pts.map((p, i) => `${i ? "L" : "M"}${p[0]},${p[1]}`).join(" ");
 
   const histPts = hist.map((p, i) => [x(i), y(p.value)]);
   const lastHistIdx = hist.length - 1;
+
   const forePts =
     fore.length > 0
       ? [
           ...(lastHistIdx >= 0 ? [histPts[lastHistIdx]] : []),
-          ...fore.map((p, i) => [x(hist.length + i), y(p.value)]),
+          ...fore.map((p, i) => [
+            x(hist.length + i),
+            y(p.value),
+          ]),
         ]
       : [];
 
@@ -189,11 +203,13 @@ function DemandChart({ history = [], forecast = [], skill }) {
 
       <figcaption className="mt-1 flex items-center justify-between text-xs text-muted">
         <span>{first.label}</span>
+
         <span className="flex items-center gap-3">
           <span className="flex items-center gap-1.5">
             <span className="inline-block h-0.5 w-4 bg-ink" />
             Actual
           </span>
+
           {fore.length > 0 && (
             <span className="flex items-center gap-1.5">
               <span className="inline-block h-0 w-4 border-t-2 border-dashed border-primary" />
@@ -201,6 +217,7 @@ function DemandChart({ history = [], forecast = [], skill }) {
             </span>
           )}
         </span>
+
         <span>{last.label}</span>
       </figcaption>
     </figure>
@@ -216,6 +233,7 @@ function ProgressSteps({ stage }) {
     { id: "importing", label: "Import job market data" },
     { id: "forecasting", label: "Generate forecast" },
   ];
+
   const activeIndex = steps.findIndex((s) => s.id === stage);
 
   return (
@@ -243,8 +261,12 @@ function ProgressSteps({ stage }) {
             >
               {done ? "✓" : ""}
             </span>
+
             {step.label}
-            {active && <span className="sr-only"> (in progress)</span>}
+
+            {active && (
+              <span className="sr-only"> (in progress)</span>
+            )}
           </li>
         );
       })}
@@ -262,6 +284,7 @@ function SkeletonCards() {
         >
           <div className="h-5 w-40 rounded bg-border" />
           <div className="mt-4 h-28 rounded bg-border opacity-60" />
+
           <div className="mt-4 grid grid-cols-3 gap-3">
             <div className="h-16 rounded bg-border opacity-60" />
             <div className="h-16 rounded bg-border opacity-60" />
@@ -285,7 +308,9 @@ function SkillCard({ item }) {
     <article className="rounded-2xl border border-border bg-surface p-5 shadow-soft">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-lg font-semibold text-ink">{item.skill}</h3>
+          <h3 className="text-lg font-semibold text-ink">
+            {item.skill}
+          </h3>
 
           {change && (
             <p className="mt-1 text-sm text-muted">
@@ -331,6 +356,7 @@ function SkillCard({ item }) {
               i === 0
                 ? Number(item.history?.at(-1)?.demand)
                 : Number(item.forecast[i - 1].predicted_demand);
+
             const diff = Number.isFinite(prev)
               ? Number(f.predicted_demand) - prev
               : 0;
@@ -341,10 +367,12 @@ function SkillCard({ item }) {
                 className="rounded-xl border border-primary/20 bg-primary/5 p-3"
               >
                 <p className="text-sm text-muted">{f.month}</p>
+
                 <p className="mt-0.5 flex items-baseline gap-2">
                   <span className="text-2xl font-bold text-ink">
                     {f.predicted_demand}
                   </span>
+
                   {Number.isFinite(prev) && diff !== 0 && (
                     <span
                       className={`text-xs font-medium ${deltaColor(diff)}`}
@@ -354,7 +382,10 @@ function SkillCard({ item }) {
                     </span>
                   )}
                 </p>
-                <p className="text-xs text-muted">predicted jobs</p>
+
+                <p className="text-xs text-muted">
+                  predicted jobs
+                </p>
               </div>
             );
           })}
@@ -380,8 +411,13 @@ function SkillCard({ item }) {
                 key={h.month}
                 className="rounded-lg border border-border px-3 py-1.5 text-sm"
               >
-                <span className="font-medium text-ink">{h.month}</span>
-                <span className="ml-2 text-muted">{jobsLabel(h.demand)}</span>
+                <span className="font-medium text-ink">
+                  {h.month}
+                </span>
+
+                <span className="ml-2 text-muted">
+                  {jobsLabel(h.demand)}
+                </span>
               </li>
             ))}
           </ul>
@@ -398,9 +434,9 @@ function SkillCard({ item }) {
 export default function CareerRoadmapPage() {
   const { user } = useAuth();
 
-  const [periods, setPeriods] = useState("");
+  const [periods, setPeriods] = useState("36");
   const [skills, setSkills] = useState([]);
-  const [stage, setStage] = useState("idle"); // idle | importing | forecasting
+  const [stage, setStage] = useState("idle");
   const [error, setError] = useState(null);
   const [importMessage, setImportMessage] = useState("");
   const [hasRun, setHasRun] = useState(false);
@@ -415,12 +451,12 @@ export default function CareerRoadmapPage() {
     const months = Number(periods);
 
     if (!periods || !Number.isInteger(months) || months < 1) {
-      setError("Enter a whole number of months, from 1 to 12.");
+      setError("Enter a whole number of months, from 1 to 60.");
       return;
     }
 
     if (months > MAX_PERIODS) {
-      setError(`You can forecast up to ${MAX_PERIODS} months ahead.`);
+      setError("You can forecast up to 5 years (60 months) ahead.");
       return;
     }
 
@@ -451,7 +487,7 @@ export default function CareerRoadmapPage() {
       setImportMessage("");
       setHasRun(true);
 
-      // Step 1: import job market data
+      // Step 1: Import job market data
       setStage("importing");
 
       const importResponse = await API.importJobsByJobTitle(jobTitleId);
@@ -463,10 +499,13 @@ export default function CareerRoadmapPage() {
         }.`
       );
 
-      // Step 2: generate forecast
+      // Step 2: Generate forecast
       setStage("forecasting");
 
-      const response = await API.getSkillForecasts(programId, months);
+      const response = await API.getSkillForecasts(
+        programId,
+        months
+      );
 
       setSkills(response.data?.data || []);
     } catch (err) {
@@ -485,22 +524,28 @@ export default function CareerRoadmapPage() {
     const list = [...skills];
 
     if (sortBy === "name") {
-      return list.sort((a, b) => String(a.skill).localeCompare(String(b.skill)));
+      return list.sort((a, b) =>
+        String(a.skill).localeCompare(String(b.skill))
+      );
     }
 
     if (sortBy === "demand") {
       const latest = (s) =>
         Number(
-          s.forecast?.at(-1)?.predicted_demand ?? s.history?.at(-1)?.demand ?? 0
+          s.forecast?.at(-1)?.predicted_demand ??
+            s.history?.at(-1)?.demand ??
+            0
         );
+
       return list.sort((a, b) => latest(b) - latest(a));
     }
 
-    // growth: biggest predicted change first, skills with no forecast last
+    // Biggest predicted change first
     const growth = (s) => {
       const c = getChange(s);
       return c ? c.diff : -Infinity;
     };
+
     return list.sort((a, b) => growth(b) - growth(a));
   }, [skills, sortBy]);
 
@@ -509,20 +554,28 @@ export default function CareerRoadmapPage() {
       const c = getChange(s);
       return c && c.diff > 0;
     }).length;
-    const noData = skills.filter((s) => !s.forecast?.length).length;
+
+    const noData = skills.filter(
+      (s) => !s.forecast?.length
+    ).length;
+
     return { rising, noData };
   }, [skills]);
 
-  const showEmpty = !loading && !error && !hasRun && skills.length === 0;
-  const showNoResults = !loading && !error && hasRun && skills.length === 0;
+  const showEmpty =
+    !loading && !error && !hasRun && skills.length === 0;
+
+  const showNoResults =
+    !loading && !error && hasRun && skills.length === 0;
 
   return (
     <section className="mx-auto max-w-4xl p-4 sm:p-6">
-      {/* Header */}
+      {/* HEADER */}
       <header>
         <h1 className="text-3xl font-bold tracking-tight text-ink">
           Skill demand forecast
         </h1>
+
         <p className="mt-2 max-w-prose text-muted">
           See which skills employers are asking for now and how demand is
           likely to change
@@ -539,28 +592,35 @@ export default function CareerRoadmapPage() {
         </p>
       </header>
 
-      {/* Controls */}
+      {/* CONTROLS */}
       <form
         onSubmit={generateForecast}
         className="mt-6 rounded-2xl border border-border bg-surface p-5 shadow-soft"
         noValidate
       >
-        <fieldset disabled={loading} className="m-0 border-0 p-0">
+        <fieldset
+          disabled={loading}
+          className="m-0 border-0 p-0"
+        >
           <legend className="text-lg font-semibold text-ink">
             How far ahead?
           </legend>
+
           <p className="mt-1 text-sm text-muted">
-            Pick a preset or enter your own number of months.
+            Choose a forecast period from 1 to 5 years, or enter a custom
+            number of months.
           </p>
 
           <div className="mt-4 flex flex-wrap items-end gap-3">
+            {/* PRESETS */}
             <div
-              className="flex gap-2"
+              className="flex flex-wrap gap-2"
               role="group"
               aria-label="Forecast period presets"
             >
               {PERIOD_PRESETS.map((n) => {
                 const active = Number(periods) === n;
+
                 return (
                   <button
                     key={n}
@@ -576,39 +636,44 @@ export default function CareerRoadmapPage() {
                         : "border-border bg-surface text-ink hover:bg-primary/5"
                     }`}
                   >
-                    {n} mo
+                    {n / 12} {n === 12 ? "Year" : "Years"}
                   </button>
                 );
               })}
             </div>
 
+            {/* CUSTOM MONTH INPUT */}
             <div>
               <label
                 htmlFor="forecast-months"
                 className="mb-1 block text-sm font-medium text-ink"
               >
-                Months
+                Custom months
               </label>
+
               <input
                 id="forecast-months"
                 type="number"
                 inputMode="numeric"
                 min="1"
                 max={MAX_PERIODS}
+                step="1"
                 value={periods}
                 onChange={(e) => {
                   setPeriods(e.target.value);
                   setError(null);
                 }}
-                placeholder="e.g. 4"
+                placeholder="e.g. 36"
                 aria-invalid={Boolean(error)}
                 aria-describedby={error ? "forecast-error" : undefined}
                 className="w-28 rounded-lg border border-border bg-surface px-3 py-2 text-ink placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               />
             </div>
 
+            {/* GENERATE */}
             <button
               type="submit"
+              disabled={loading}
               className="rounded-lg bg-primary px-5 py-2 font-medium text-white hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? "Working…" : "Generate forecast"}
@@ -616,18 +681,21 @@ export default function CareerRoadmapPage() {
           </div>
         </fieldset>
 
+        {/* PROGRESS */}
         {loading && (
           <div role="status" aria-live="polite">
             <ProgressSteps stage={stage} />
           </div>
         )}
 
+        {/* IMPORT MESSAGE */}
         {!loading && importMessage && (
           <p className="mt-4 text-sm text-muted" role="status">
             {importMessage}
           </p>
         )}
 
+        {/* ERROR */}
         {error && (
           <div
             id="forecast-error"
@@ -639,10 +707,10 @@ export default function CareerRoadmapPage() {
         )}
       </form>
 
-      {/* Loading skeleton */}
+      {/* LOADING SKELETON */}
       {loading && <SkeletonCards />}
 
-      {/* Results */}
+      {/* RESULTS */}
       {!loading && skills.length > 0 && (
         <div className="mt-8">
           <div className="flex flex-wrap items-end justify-between gap-3">
@@ -650,6 +718,7 @@ export default function CareerRoadmapPage() {
               <h2 className="text-xl font-semibold text-ink">
                 Forecast results
               </h2>
+
               <p className="mt-1 text-sm text-muted">
                 {skills.length} skill{skills.length === 1 ? "" : "s"} analysed.{" "}
                 {summary.rising} predicted to rise
@@ -658,21 +727,36 @@ export default function CareerRoadmapPage() {
                   : ""}
                 .
               </p>
+
+              <p className="mt-1 text-xs text-muted">
+                Forecast horizon: {formatPeriod(Number(periods))}
+              </p>
             </div>
 
+            {/* SORT */}
             <div>
-              <label htmlFor="sort-skills" className="mr-2 text-sm text-muted">
+              <label
+                htmlFor="sort-skills"
+                className="mr-2 text-sm text-muted"
+              >
                 Sort by
               </label>
+
               <select
                 id="sort-skills"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                <option value="growth">Biggest predicted growth</option>
-                <option value="demand">Highest predicted demand</option>
-                <option value="name">Skill name</option>
+                <option value="growth">
+                  Biggest predicted growth
+                </option>
+                <option value="demand">
+                  Highest predicted demand
+                </option>
+                <option value="name">
+                  Skill name
+                </option>
               </select>
             </div>
           </div>
@@ -685,10 +769,13 @@ export default function CareerRoadmapPage() {
         </div>
       )}
 
-      {/* Empty state: before first run */}
+      {/* EMPTY STATE: BEFORE FIRST RUN */}
       {showEmpty && (
         <div className="mt-6 rounded-2xl border border-dashed border-border p-8 text-center">
-          <h2 className="text-lg font-semibold text-ink">No forecast yet</h2>
+          <h2 className="text-lg font-semibold text-ink">
+            No forecast yet
+          </h2>
+
           <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
             Choose a forecast period above and select Generate forecast to see
             predicted skill demand.
@@ -696,10 +783,13 @@ export default function CareerRoadmapPage() {
         </div>
       )}
 
-      {/* Empty state: ran but nothing came back */}
+      {/* EMPTY STATE: NO RESULTS */}
       {showNoResults && (
         <div className="mt-6 rounded-2xl border border-dashed border-border p-8 text-center">
-          <h2 className="text-lg font-semibold text-ink">No skills found</h2>
+          <h2 className="text-lg font-semibold text-ink">
+            No skills found
+          </h2>
+
           <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
             We didn't find any skill data for your program yet. Try a different
             period or check back after more job data is imported.

@@ -1,8 +1,9 @@
+
 import numpy as np
 from sklearn.linear_model import LinearRegression
 
 
-def forecast_skill_demand(history, periods=3):
+def forecast_skill_demand(history, periods=36):
     """
     Forecast future skill demand using linear regression.
 
@@ -14,11 +15,13 @@ def forecast_skill_demand(history, periods=3):
 
     periods:
         Number of future months to forecast.
+        Default: 36 months (3 years).
     """
 
-    if not history:
+    if not history or len(history) < 2:
         return []
 
+    # Sort historical records chronologically
     history = sorted(
         history,
         key=lambda x: x["month"]
@@ -33,32 +36,28 @@ def forecast_skill_demand(history, periods=3):
         len(y)
     ).reshape(-1, 1)
 
-    # Not enough historical points
-    if len(y) < 2:
-        return []
-
+    # Train regression model
     model = LinearRegression()
-
     model.fit(X, y)
 
+    # Forecast next 36 months
     future_X = np.arange(
         len(y),
         len(y) + periods
     ).reshape(-1, 1)
 
-    predictions = model.predict(
-        future_X
-    )
+    predictions = model.predict(future_X)
 
     predictions = np.maximum(
         predictions,
         0
     )
 
+    # Get the latest historical month
     last_month = np.datetime64(
-    history[-1]["month"],
-    "M"
-)
+        history[-1]["month"],
+        "M"
+    )
 
     results = []
 
@@ -66,7 +65,6 @@ def forecast_skill_demand(history, periods=3):
         predictions,
         start=1
     ):
-
         future_month = (
             last_month +
             np.timedelta64(index, "M")

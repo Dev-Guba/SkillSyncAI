@@ -1,14 +1,16 @@
+
 import { useEffect, useState } from "react";
 import {
   GitBranch,
   Sparkles,
-  Heart,
   Briefcase,
   Search,
   Check,
   Loader2,
   RotateCcw,
+  RefreshCw,
 } from "lucide-react";
+
 import { API } from "@/api/api.js";
 import Button from "@/components/common/Button";
 
@@ -19,15 +21,25 @@ const FALLBACK_PROGRAMS = [
   { program_id: 2, program_code: "BSIT", program_name: "BS Information Technology" },
 ];
 
-const FALLBACK_INTERESTS = [
-  { interest_id: 1, interest_name: "Web Development" },
-  { interest_id: 2, interest_name: "Mobile App Development" },
-  { interest_id: 3, interest_name: "Artificial Intelligence & ML" },
-  { interest_id: 4, interest_name: "Data Science & Analytics" },
-  { interest_id: 5, interest_name: "Cybersecurity" },
-  { interest_id: 6, interest_name: "Cloud Computing & DevOps" },
-  { interest_id: 7, interest_name: "UI/UX Design" },
-];
+// Extract arrays from different API response structures
+function extractArray(response, possibleKeys = []) {
+  let data = response?.data;
+
+  for (let i = 0; i < 4; i++) {
+    if (Array.isArray(data)) return data;
+    if (!data || typeof data !== "object") return [];
+
+    const matchingKey = possibleKeys.find((key) =>
+      Array.isArray(data[key])
+    );
+
+    if (matchingKey) return data[matchingKey];
+
+    data = data.data;
+  }
+
+  return Array.isArray(data) ? data : [];
+}
 
 function readLocalOverrides() {
   try {
@@ -40,157 +52,193 @@ function readLocalOverrides() {
 export default function AdminMappingsPage() {
   const [programs, setPrograms] = useState([]);
   const [selectedProgramId, setSelectedProgramId] = useState("");
-  const [activeTab, setActiveTab] = useState("skills"); // skills | interests | jobs
+  const [activeTab, setActiveTab] = useState("skills");
   const [search, setSearch] = useState("");
+
   const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [loadingLinked, setLoadingLinked] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const [catalogVersion, setCatalogVersion] = useState(0);
 
   // Master lists
   const [allSkills, setAllSkills] = useState([]);
-  const [allInterests, setAllInterests] = useState([]);
   const [allJobs, setAllJobs] = useState([]);
 
-  // Linked IDs for the currently selected program
+  // Linked IDs
   const [linkedSkillIds, setLinkedSkillIds] = useState([]);
-  const [linkedInterestIds, setLinkedInterestIds] = useState([]);
   const [linkedJobIds, setLinkedJobIds] = useState([]);
 
-  // 1. Load Programs & Master Catalogs
+  // 1. Load Programs and Master Catalogs
   useEffect(() => {
     let active = true;
 
     async function loadMasterData() {
       setLoadingCatalog(true);
-      const [progRes, skillsRes, intRes, jobsRes] = await Promise.allSettled([
-        API.getAllPrograms(),
-        API.getallSkillSet(),
-        API.getAllInterests(),
-        API.getAllJobSkills(),
-      ]);
 
-      if (!active) return;
+      try {
+        const [progRes, skillsRes, jobsRes] = await Promise.allSettled([
+          API.getAllPrograms(),
+          API.getallSkillSet(),
+          API.getAllJobSkills(),
+        ]);
 
-      const pList =
-        progRes.status === "fulfilled"
-          ? progRes.value.data?.data || progRes.value.data || []
-          : [];
-      const finalPrograms =
-        Array.isArray(pList) && pList.length > 0 ? pList : FALLBACK_PROGRAMS;
+        if (!active) return;
 
-      const sList =
-        skillsRes.status === "fulfilled"
-          ? skillsRes.value.data?.data || skillsRes.value.data || []
-          : [];
-      const iList =
-        intRes.status === "fulfilled"
-          ? intRes.value.data?.data || intRes.value.data || []
-          : [];
-      const jList =
-        jobsRes.status === "fulfilled"
-          ? jobsRes.value.data?.data || jobsRes.value.data || []
-          : [];
+        const pList =
+          progRes.status === "fulfilled"
+            ? extractArray(progRes.value, ["programs"])
+            : [];
 
-      setPrograms(finalPrograms);
-      setAllSkills(Array.isArray(sList) ? sList : []);
-      setAllInterests(
-        Array.isArray(iList) && iList.length > 0 ? iList : FALLBACK_INTERESTS
-      );
-      setAllJobs(Array.isArray(jList) ? jList : []);
+        const sList =
+          skillsRes.status === "fulfilled"
+            ? extractArray(skillsRes.value, ["skillSets", "skills"])
+            : [];
 
-      if (finalPrograms.length > 0) {
-        setSelectedProgramId(String(finalPrograms[0].program_id));
+        const jList =
+          jobsRes.status === "fulfilled"
+            ? extractArray(jobsRes.value, [
+                "jobTitles",
+                "job_titles",
+                "jobs",
+              ])
+            : [];
+
+        if (skillsRes.status === "rejected") {
+          console.error("Failed to load skills:", skillsRes.reason);
+        }
+
+        if (jobsRes.status === "rejected") {
+          console.error("Failed to load job titles:", jobsRes.reason);
+        }
+
+        const finalPrograms =
+          pList.length > 0 ? pList : FALLBACK_PROGRAMS;
+
+        setPrograms(finalPrograms);
+        setAllSkills(sList);
+        setAllJobs(jList);
+
+        if (!selectedProgramId && finalPrograms.length > 0) {
+          setSelectedProgramId(String(finalPrograms[0].program_id));
+        }
+
+        console.log("Program Mapping Catalog:", {
+          programs: finalPrograms.length,
+          skills: sList.length,
+          jobs: jList.length,
+        });
+      } catch (error) {
+        console.error("Error loading master data:", error);
+      } finally {
+        if (active) {
+          setLoadingCatalog(false);
+          setRefreshing(false);
+        }
       }
-
-      setLoadingCatalog(false);
     }
 
     loadMasterData();
+
     return () => {
       active = false;
     };
-  }, []);
+  }, [catalogVersion]);
 
-  // 2. Load Linked Data whenever selectedProgramId changes
+  // 2. Load linked data whenever selected program changes
   useEffect(() => {
     if (!selectedProgramId) return;
+
     let active = true;
 
     async function loadProgramLinks() {
       setLoadingLinked(true);
-      const overrides = readLocalOverrides()[selectedProgramId];
 
-      const [pSkills, pInterests, pJobs] = await Promise.allSettled([
-        API.getProgramSkills(selectedProgramId),
-        API.getProgramInterests(selectedProgramId),
-        API.getProgramJobTitles(selectedProgramId),
-      ]);
+      try {
+        const overrides = readLocalOverrides()[selectedProgramId];
 
-      if (!active) return;
+        const [pSkills, pJobs] = await Promise.allSettled([
+          API.getProgramSkills(selectedProgramId),
+          API.getProgramJobTitles(selectedProgramId),
+        ]);
 
-      const apiSkills =
-        pSkills.status === "fulfilled"
-          ? pSkills.value.data?.data || pSkills.value.data || []
-          : [];
-      const apiInterests =
-        pInterests.status === "fulfilled"
-          ? pInterests.value.data?.data || pInterests.value.data || []
-          : [];
-      const apiJobs =
-        pJobs.status === "fulfilled"
-          ? pJobs.value.data?.data || pJobs.value.data || []
-          : [];
+        if (!active) return;
 
-      const skillIds = overrides?.skills
-        ? overrides.skills
-        : Array.isArray(apiSkills)
-        ? apiSkills.map((s) => s.skill_set_id)
-        : [];
+        const apiSkills =
+          pSkills.status === "fulfilled"
+            ? extractArray(pSkills.value, ["skills", "skillSets"])
+            : [];
 
-      const interestIds = overrides?.interests
-        ? overrides.interests
-        : Array.isArray(apiInterests)
-        ? apiInterests.map((i) => i.interest_id)
-        : [];
+        const apiJobs =
+          pJobs.status === "fulfilled"
+            ? extractArray(pJobs.value, [
+                "jobTitles",
+                "job_titles",
+                "jobs",
+              ])
+            : [];
 
-      const jobIds = overrides?.jobs
-        ? overrides.jobs
-        : Array.isArray(apiJobs)
-        ? apiJobs.map((j) => j.job_title_id)
-        : [];
+        const skillIds = overrides?.skills
+          ? overrides.skills
+          : apiSkills.map((s) => s.skill_set_id);
 
-      // Also ensure any linked items not in master list appear cleanly
-      if (Array.isArray(apiSkills) && apiSkills.length > 0) {
+        const jobIds = overrides?.jobs
+          ? overrides.jobs
+          : apiJobs.map((j) => j.job_title_id);
+
+        // Include linked items missing from master catalogs
         setAllSkills((prev) => {
-          const existing = new Set(prev.map((x) => x.skill_set_id));
-          const extra = apiSkills.filter((x) => !existing.has(x.skill_set_id));
-          return extra.length > 0 ? [...prev, ...extra] : prev;
-        });
-      }
-      if (Array.isArray(apiJobs) && apiJobs.length > 0) {
-        setAllJobs((prev) => {
-          const existing = new Set(prev.map((x) => x.job_title_id));
-          const extra = apiJobs.filter((x) => !existing.has(x.job_title_id));
-          return extra.length > 0 ? [...prev, ...extra] : prev;
-        });
-      }
+          const existing = new Set(
+            prev.map((x) => String(x.skill_set_id))
+          );
 
-      setLinkedSkillIds(skillIds);
-      setLinkedInterestIds(interestIds);
-      setLinkedJobIds(jobIds);
-      setLoadingLinked(false);
+          const extra = apiSkills.filter(
+            (x) => !existing.has(String(x.skill_set_id))
+          );
+
+          return extra.length > 0 ? [...prev, ...extra] : prev;
+        });
+
+        setAllJobs((prev) => {
+          const existing = new Set(
+            prev.map((x) => String(x.job_title_id))
+          );
+
+          const extra = apiJobs.filter(
+            (x) => !existing.has(String(x.job_title_id))
+          );
+
+          return extra.length > 0 ? [...prev, ...extra] : prev;
+        });
+
+        setLinkedSkillIds(skillIds);
+        setLinkedJobIds(jobIds);
+      } catch (error) {
+        console.error("Error loading program mappings:", error);
+      } finally {
+        if (active) setLoadingLinked(false);
+      }
     }
 
     loadProgramLinks();
+
     return () => {
       active = false;
     };
   }, [selectedProgramId]);
 
+  // 3. Refresh master catalog
+  const handleRefreshCatalog = () => {
+    setRefreshing(true);
+    setCatalogVersion((prev) => prev + 1);
+  };
+
+  // 4. Save local mapping overrides
   const saveOverride = (type, nextIds) => {
     const all = readLocalOverrides();
+
     const current = all[selectedProgramId] || {
       skills: linkedSkillIds,
-      interests: linkedInterestIds,
       jobs: linkedJobIds,
     };
 
@@ -202,40 +250,48 @@ export default function AdminMappingsPage() {
     try {
       localStorage.setItem(LOCAL_MAPPINGS_KEY, JSON.stringify(all));
     } catch {
-      // ignore storage errors
+      console.error("Unable to save mapping overrides.");
     }
   };
 
+  // 5. Toggle assignments
   const toggleAssignment = (type, id) => {
     if (type === "skills") {
-      const next = linkedSkillIds.includes(id)
-        ? linkedSkillIds.filter((x) => x !== id)
+      const next = linkedSkillIds.some((x) => String(x) === String(id))
+        ? linkedSkillIds.filter((x) => String(x) !== String(id))
         : [...linkedSkillIds, id];
+
       setLinkedSkillIds(next);
       saveOverride("skills", next);
-    } else if (type === "interests") {
-      const next = linkedInterestIds.includes(id)
-        ? linkedInterestIds.filter((x) => x !== id)
-        : [...linkedInterestIds, id];
-      setLinkedInterestIds(next);
-      saveOverride("interests", next);
     } else {
-      const next = linkedJobIds.includes(id)
-        ? linkedJobIds.filter((x) => x !== id)
+      const next = linkedJobIds.some((x) => String(x) === String(id))
+        ? linkedJobIds.filter((x) => String(x) !== String(id))
         : [...linkedJobIds, id];
+
       setLinkedJobIds(next);
       saveOverride("jobs", next);
     }
   };
 
+  // 6. Reset local overrides and reload backend mappings
   const handleResetProgramOverride = () => {
+    if (!selectedProgramId) return;
+
     const all = readLocalOverrides();
+
     delete all[selectedProgramId];
-    localStorage.setItem(LOCAL_MAPPINGS_KEY, JSON.stringify(all));
-    // Trigger reload
-    const current = selectedProgramId;
+
+    try {
+      localStorage.setItem(LOCAL_MAPPINGS_KEY, JSON.stringify(all));
+    } catch {
+      console.error("Unable to reset mapping overrides.");
+    }
+
+    // Reload the selected program
     setSelectedProgramId("");
-    setTimeout(() => setSelectedProgramId(current), 0);
+    setTimeout(() => {
+      setSelectedProgramId(String(selectedProgramId));
+    }, 0);
   };
 
   const query = search.toLowerCase().trim();
@@ -248,17 +304,9 @@ export default function AdminMappingsPage() {
       linkedIds: linkedSkillIds,
       idKey: "skill_set_id",
       nameKey: "skill_set_name",
-      empty: "No skills found.",
+      empty: "No skills found. Try refreshing the catalog.",
     },
-    interests: {
-      items: allInterests.filter((i) =>
-        (i.interest_name || "").toLowerCase().includes(query)
-      ),
-      linkedIds: linkedInterestIds,
-      idKey: "interest_id",
-      nameKey: "interest_name",
-      empty: "No interests found.",
-    },
+
     jobs: {
       items: allJobs.filter((j) =>
         (j.job_title_name || j.title || "").toLowerCase().includes(query)
@@ -274,28 +322,46 @@ export default function AdminMappingsPage() {
 
   return (
     <section className="space-y-6 p-6">
+      {/* Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-primary">
             Admin • Curriculum & Career Mapping
           </p>
+
           <h1 className="mt-1 text-3xl font-bold text-ink">
             Program Mappings
           </h1>
+
           <p className="mt-1 text-sm text-muted">
-            Inspect and toggle skills, interests, and target job titles linked to each academic program.
+            Inspect and toggle skills and target job titles linked to each
+            academic program.
           </p>
         </div>
 
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          icon={RotateCcw}
-          onClick={handleResetProgramOverride}
-        >
-          Sync with Backend
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            icon={RefreshCw}
+            disabled={refreshing || loadingCatalog}
+            onClick={handleRefreshCatalog}
+          >
+            {refreshing ? "Refreshing..." : "Refresh Catalog"}
+          </Button>
+
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            icon={RotateCcw}
+            onClick={handleResetProgramOverride}
+            disabled={!selectedProgramId}
+          >
+            Sync with Backend
+          </Button>
+        </div>
       </div>
 
       {/* Program Selector */}
@@ -304,6 +370,7 @@ export default function AdminMappingsPage() {
           <GitBranch className="h-4 w-4 text-primary" />
           Select Academic Program
         </label>
+
         {loadingCatalog ? (
           <p className="text-sm text-muted">Loading programs...</p>
         ) : (
@@ -311,6 +378,7 @@ export default function AdminMappingsPage() {
             {programs.map((program) => {
               const idStr = String(program.program_id);
               const isSelected = selectedProgramId === idStr;
+
               return (
                 <button
                   key={idStr}
@@ -322,7 +390,9 @@ export default function AdminMappingsPage() {
                       : "border-border bg-surface-alt/50 text-ink hover:border-primary"
                   }`}
                 >
-                  {program.program_code ? `${program.program_code} — ` : ""}
+                  {program.program_code
+                    ? `${program.program_code} — `
+                    : ""}
                   {program.program_name}
                 </button>
               );
@@ -331,7 +401,7 @@ export default function AdminMappingsPage() {
         )}
       </div>
 
-      {/* Mapping Tabs & Toggle Area */}
+      {/* Mapping Tabs */}
       <div className="rounded-2xl border border-border bg-surface p-6 shadow-soft">
         <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap gap-2 rounded-xl bg-surface-alt p-1">
@@ -341,12 +411,6 @@ export default function AdminMappingsPage() {
                 label: "Skills",
                 count: linkedSkillIds.length,
                 icon: Sparkles,
-              },
-              {
-                key: "interests",
-                label: "Interests",
-                count: linkedInterestIds.length,
-                icon: Heart,
               },
               {
                 key: "jobs",
@@ -370,6 +434,7 @@ export default function AdminMappingsPage() {
               >
                 <Icon className="h-4 w-4" />
                 {label}
+
                 <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] text-primary">
                   {count}
                 </span>
@@ -379,6 +444,7 @@ export default function AdminMappingsPage() {
 
           <div className="flex h-10 w-full items-center rounded-xl border border-border bg-surface-alt/50 px-3 md:w-72">
             <Search className="mr-2 h-4 w-4 text-muted" />
+
             <input
               type="text"
               value={search}
@@ -390,10 +456,11 @@ export default function AdminMappingsPage() {
         </div>
 
         <p className="mb-4 text-xs text-muted">
-          Click any item below to assign or unassign it from the selected program. Highlighted chips are currently linked.
+          Click any item below to assign or unassign it from the selected
+          program. Highlighted chips are currently linked.
         </p>
 
-        {loadingLinked ? (
+        {loadingLinked || loadingCatalog ? (
           <div className="flex items-center justify-center gap-2 py-12 text-muted">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
             <span className="text-sm">Loading program mappings...</span>
@@ -406,8 +473,12 @@ export default function AdminMappingsPage() {
           <div className="flex flex-wrap gap-2.5">
             {activeData.items.map((item) => {
               const id = item[activeData.idKey];
-              const name = item[activeData.nameKey] || item.title || "Untitled";
-              const isLinked = activeData.linkedIds.includes(id);
+              const name =
+                item[activeData.nameKey] || item.title || "Untitled";
+
+              const isLinked = activeData.linkedIds.some(
+                (linkedId) => String(linkedId) === String(id)
+              );
 
               return (
                 <button

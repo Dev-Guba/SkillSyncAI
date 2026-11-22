@@ -50,7 +50,7 @@ class BatchSkillExtractionRequest(BaseModel):
 
 class SkillForecastRequest(BaseModel):
     history: list[dict]
-    periods: int = 3
+    periods: int = 36
 
 
 @app.get("/")

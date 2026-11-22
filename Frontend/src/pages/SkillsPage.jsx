@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -6,7 +7,6 @@ import {
   Check,
   Sparkles,
   Compass,
-  Heart,
   Sliders,
   ArrowRight,
   Loader2,
@@ -18,20 +18,6 @@ import { API } from "../api/api.js";
 
 const MIN_SELECTION = 3;
 const PROFICIENCY_LEVELS = ["Beginner", "Intermediate", "Advanced"];
-
-// Fallback interests in case the backend interest endpoint has no data yet
-const FALLBACK_INTERESTS = [
-  { interest_id: 1, interest_name: "Web Development" },
-  { interest_id: 2, interest_name: "Mobile App Development" },
-  { interest_id: 3, interest_name: "Artificial Intelligence & ML" },
-  { interest_id: 4, interest_name: "Data Science & Analytics" },
-  { interest_id: 5, interest_name: "Cybersecurity" },
-  { interest_id: 6, interest_name: "Cloud Computing & DevOps" },
-  { interest_id: 7, interest_name: "UI/UX Design" },
-  { interest_id: 8, interest_name: "Game Development" },
-  { interest_id: 9, interest_name: "Database Administration" },
-  { interest_id: 10, interest_name: "Quality Assurance & Testing" },
-];
 
 function ChipSection({
   title,
@@ -59,6 +45,7 @@ function ChipSection({
           {items.map((item) => {
             const itemId = item[idKey];
             const itemName = item[nameKey];
+
             const isSelected = selected.some(
               (sel) => sel[idKey] === itemId
             );
@@ -113,13 +100,11 @@ export default function SkillsPage() {
 
   const [search, setSearch] = useState("");
 
-  // PROGRAM DATA
+  // PROGRAM SKILLS
   const [skills, setSkills] = useState([]);
-  const [interests, setInterests] = useState([]);
 
   // USER SELECTED
   const [selectedSkills, setSelectedSkills] = useState([]);
-  const [selectedInterests, setSelectedInterests] = useState([]);
   const [selectedJobTitle, setSelectedJobTitle] = useState(null);
 
   // AI RECOMMENDATIONS
@@ -133,7 +118,7 @@ export default function SkillsPage() {
 
   /*
   |--------------------------------------------------------------------------
-  | GET PROGRAM SKILLS & INTERESTS
+  | GET PROGRAM SKILLS
   |--------------------------------------------------------------------------
   */
   const fetchProgramData = async () => {
@@ -146,28 +131,8 @@ export default function SkillsPage() {
       }
 
       const skillsResponse = await API.getProgramSkills(programId);
-      setSkills(skillsResponse.data?.data || []);
 
-      // Fetch interests (try program-specific first, then general, then fallback)
-      try {
-        const interestResponse = await API.getProgramInterests(programId);
-        const fetchedInterests = interestResponse.data?.data || [];
-        if (fetchedInterests.length > 0) {
-          setInterests(fetchedInterests);
-        } else {
-          throw new Error("Empty program interests");
-        }
-      } catch {
-        try {
-          const allInterestsRes = await API.getAllInterests();
-          const allInterests = allInterestsRes.data?.data || [];
-          setInterests(
-            allInterests.length > 0 ? allInterests : FALLBACK_INTERESTS
-          );
-        } catch {
-          setInterests(FALLBACK_INTERESTS);
-        }
-      }
+      setSkills(skillsResponse.data?.data || []);
     } catch (error) {
       console.error("Program loading error:", error);
     }
@@ -175,7 +140,7 @@ export default function SkillsPage() {
 
   /*
   |--------------------------------------------------------------------------
-  | TOGGLE SKILL & PROFICIENCY LEVEL (#15)
+  | TOGGLE SKILL
   |--------------------------------------------------------------------------
   */
   const toggleSkill = (skill) => {
@@ -197,6 +162,11 @@ export default function SkillsPage() {
     }
   };
 
+  /*
+  |--------------------------------------------------------------------------
+  | UPDATE SKILL PROFICIENCY
+  |--------------------------------------------------------------------------
+  */
   const updateSkillProficiency = (skillSetId, level) => {
     setSelectedSkills((prev) =>
       prev.map((skill) =>
@@ -205,27 +175,6 @@ export default function SkillsPage() {
           : skill
       )
     );
-  };
-
-  /*
-  |--------------------------------------------------------------------------
-  | TOGGLE INTEREST (#14)
-  |--------------------------------------------------------------------------
-  */
-  const toggleInterest = (interest) => {
-    const exists = selectedInterests.some(
-      (item) => item.interest_id === interest.interest_id
-    );
-
-    if (exists) {
-      setSelectedInterests(
-        selectedInterests.filter(
-          (item) => item.interest_id !== interest.interest_id
-        )
-      );
-    } else {
-      setSelectedInterests([...selectedInterests, interest]);
-    }
   };
 
   /*
@@ -258,18 +207,13 @@ export default function SkillsPage() {
 
         const recommendations = response.data?.data || [];
 
-        // Remove careers with 0% score
         const visibleRecommendations = recommendations.filter(
           (career) => career.match_percentage > 0
         );
 
         setCareerRecommendations(visibleRecommendations);
       } catch (error) {
-        console.error(
-          "Career recommendation error:",
-          error
-        );
-
+        console.error("Career recommendation error:", error);
         setCareerRecommendations([]);
       } finally {
         setLoadingRecommendations(false);
@@ -285,11 +229,8 @@ export default function SkillsPage() {
     (skill.skill_set_name || "").toLowerCase().includes(query)
   );
 
-  const filteredInterests = interests.filter((interest) =>
-    (interest.interest_name || "").toLowerCase().includes(query)
-  );
-
   const totalSelected = selectedSkills.length;
+
   const canContinue =
     totalSelected >= MIN_SELECTION && selectedJobTitle;
 
@@ -302,7 +243,6 @@ export default function SkillsPage() {
     if (!canContinue) return;
 
     try {
-      // #15: Use the user's chosen proficiency_level instead of hard-coding "Beginner"
       const payloadSkills = selectedSkills.map((skill) => ({
         skill_set_id: skill.skill_set_id,
         proficiency_level: skill.proficiency_level || "Beginner",
@@ -311,28 +251,6 @@ export default function SkillsPage() {
       await API.createUserSkills({
         skills: payloadSkills,
       });
-
-      // #14: Save selected interests if any are chosen
-      if (selectedInterests.length > 0) {
-        const interestPayload = {
-          interests: selectedInterests.map((item) => ({
-            interest_id: item.interest_id,
-            interestId: item.interest_id,
-            interest_name: item.interest_name,
-          })),
-          interestIds: selectedInterests.map((item) => item.interest_id),
-        };
-
-        try {
-          await API.createInterestAPI(interestPayload);
-        } catch {
-          try {
-            await API.createUserInterests(interestPayload);
-          } catch (interestErr) {
-            console.warn("Interest save warning:", interestErr);
-          }
-        }
-      }
 
       await API.createUserJobTitle({
         job_title_id: selectedJobTitle,
@@ -345,8 +263,7 @@ export default function SkillsPage() {
       console.error(error);
 
       alert(
-        error.response?.data?.message ||
-          "Failed setup."
+        error.response?.data?.message || "Failed setup."
       );
     }
   };
@@ -354,15 +271,14 @@ export default function SkillsPage() {
   return (
     <section className="relative min-h-screen bg-white pb-32 dark:bg-surface">
       <div className="mx-auto max-w-3xl px-6 pt-16">
-        {/* HEADER */}
-{/* Logo */}
-<div className="flex justify-center">
-  <img
-    src={logo}
-    alt="SkillSyncAI"
-    className="h-14 w-auto max-w-[220px] object-contain"
-  />
-</div>
+        {/* LOGO */}
+        <div className="flex justify-center">
+          <img
+            src={logo}
+            alt="SkillSyncAI"
+            className="h-14 w-auto max-w-[220px] object-contain"
+          />
+        </div>
 
         {/* SEARCH */}
         <div className="mb-10 flex h-14 items-center rounded-2xl border px-4">
@@ -370,15 +286,13 @@ export default function SkillsPage() {
 
           <input
             value={search}
-            onChange={(e) =>
-              setSearch(e.target.value)
-            }
-            placeholder="Search skills or interests..."
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search skills..."
             className="w-full bg-transparent outline-none"
           />
         </div>
 
-        {/* SKILLS */}
+        {/* PROGRAM SKILLS */}
         <ChipSection
           title="Program Skills"
           caption="skills related to your course"
@@ -391,14 +305,16 @@ export default function SkillsPage() {
           nameKey="skill_set_name"
         />
 
-        {/* #15: PROFICIENCY LEVEL SELECTOR FOR SELECTED SKILLS */}
+        {/* SKILL PROFICIENCY */}
         {selectedSkills.length > 0 && (
           <div className="mt-8 rounded-2xl border border-border p-5">
             <div className="mb-4 flex items-center gap-2">
               <Sliders className="h-5 w-5 text-primary" />
+
               <h2 className="text-lg font-semibold text-ink">
                 Skill Proficiency
               </h2>
+
               <span className="text-sm text-muted">
                 — choose your level for each selected skill
               </span>
@@ -418,6 +334,7 @@ export default function SkillsPage() {
                     {PROFICIENCY_LEVELS.map((level) => {
                       const active =
                         (skill.proficiency_level || "Beginner") === level;
+
                       return (
                         <button
                           key={level}
@@ -444,21 +361,6 @@ export default function SkillsPage() {
             </div>
           </div>
         )}
-
-        {/* #14: INTERESTS SELECTION */}
-        <div className="mt-10">
-          <ChipSection
-            title="Interests"
-            caption="topics & areas you enjoy exploring"
-            icon={Heart}
-            items={filteredInterests}
-            selected={selectedInterests}
-            onToggle={toggleInterest}
-            emptyHint="No interests found."
-            idKey="interest_id"
-            nameKey="interest_name"
-          />
-        </div>
 
         {/* AI CAREER RECOMMENDATIONS */}
         <div className="mt-12">
@@ -503,15 +405,11 @@ export default function SkillsPage() {
             careerRecommendations.length > 0 && (
               <div className="space-y-3">
                 {careerRecommendations.map((career) => {
-                  const score =
-                    career.match_percentage;
-
-                  const styles =
-                    getScoreStyle(score);
+                  const score = career.match_percentage;
+                  const styles = getScoreStyle(score);
 
                   const selected =
-                    selectedJobTitle ===
-                    career.job_title_id;
+                    selectedJobTitle === career.job_title_id;
 
                   return (
                     <motion.button
@@ -519,14 +417,10 @@ export default function SkillsPage() {
                       type="button"
                       whileTap={{ scale: 0.98 }}
                       onClick={() =>
-                        setSelectedJobTitle(
-                          career.job_title_id
-                        )
+                        setSelectedJobTitle(career.job_title_id)
                       }
                       className={`w-full rounded-2xl border p-4 text-left transition ${styles.card} ${
-                        selected
-                          ? "ring-2 ring-primary"
-                          : ""
+                        selected ? "ring-2 ring-primary" : ""
                       }`}
                     >
                       <div className="flex items-center justify-between gap-4">
@@ -536,8 +430,7 @@ export default function SkillsPage() {
                           </h3>
 
                           <p className="mt-1 text-sm text-muted">
-                            {career.matched_skills?.length || 0}{" "}
-                            matching skills
+                            {career.matched_skills?.length || 0} matching skills
                           </p>
                         </div>
 
@@ -559,13 +452,7 @@ export default function SkillsPage() {
       <div className="fixed inset-x-0 bottom-0 border-t bg-white p-4 dark:bg-surface">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <p className="text-sm text-ink">
-            {totalSelected} skill{totalSelected === 1 ? "" : "s"}
-            {selectedInterests.length > 0
-              ? ` • ${selectedInterests.length} interest${
-                  selectedInterests.length === 1 ? "" : "s"
-                }`
-              : ""}{" "}
-            selected
+            {totalSelected} skill{totalSelected === 1 ? "" : "s"} selected
           </p>
 
           <button

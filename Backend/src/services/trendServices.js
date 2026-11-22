@@ -254,7 +254,7 @@ export async function getSkillTrends(program_id = null) {
     }
 }
 
-export async function getSkillForecasts(periods = 3, program_id = null) {
+export async function getSkillForecasts(periods = 36, program_id = null) {
     try {
         const monthlyData = await getMonthlySkillDemand(program_id);
 
