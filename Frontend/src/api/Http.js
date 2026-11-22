@@ -1,7 +1,7 @@
 import axios from "axios";
 import { STORAGE_KEYS } from "../utils/storageKeys.js";
 
-const baseURL = "http://localhost:3000";
+const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 const Http = axios.create({
   baseURL,
