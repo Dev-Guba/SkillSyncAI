@@ -25,14 +25,18 @@ const PORT = process.env.PORT || 3000;
 const allowedOrigins = [
   "http://localhost:5173",
   "https://skillsyncai-2-lh2y.onrender.com",
-  process.env.FRONTEND_URL,
-].filter(Boolean);
-
-const allowedOrigins = [
-  "http://localhost:5173",
   "https://skillsyncai.com.de",
   process.env.FRONTEND_URL,
 ].filter(Boolean);
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    exposedHeaders: ["Content-Disposition"],
+  })
+);
 
 app.use(express.json());
 
