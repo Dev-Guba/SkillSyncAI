@@ -12,6 +12,9 @@ export default defineConfig({
     },
   },
   preview: {
-    allowedHosts: ['skillsyncai-2-lh2y.onrender.com'],
+    allowedHosts: [
+      'skillsyncai-2-lh2y.onrender.com',
+      'skillsyncai.com.de',
+    ],
   },
 })
