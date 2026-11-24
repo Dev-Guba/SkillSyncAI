@@ -28,14 +28,11 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
-app.use(
-  cors({
-    origin: allowedOrigins,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    exposedHeaders: ["Content-Disposition"],
-  })
-);
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://skillsyncai.com.de",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
 
 app.use(express.json());
 
