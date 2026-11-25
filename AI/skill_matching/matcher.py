@@ -2,23 +2,34 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 
+def _normalize_skill(skill):
+    # lowercase and collapse spaces: "  Machine   Learning " -> "machine learning"
+    return " ".join(str(skill).lower().split())
+
+
 def calculate_cosine_similarity(user_skills, required_skills):
+    """
+    TF-IDF + cosine similarity between a student's skills and a career's
+    required skills.
 
-    user_text = " ".join(
-        skill.lower() for skill in user_skills
-    )
+    Each skill is ONE term ("machine learning" stays whole). Previously the
+    skills were joined into a sentence and split into single words, so
+    "Deep Learning" and "Machine Learning" looked 34% similar just because
+    both contain "learning" (same for "Project/Product Management",
+    "Data Analysis/Visualization").
+    """
+    user_terms = sorted({_normalize_skill(s) for s in user_skills if _normalize_skill(s)})
+    required_terms = sorted({_normalize_skill(s) for s in required_skills if _normalize_skill(s)})
 
-    required_text = " ".join(
-        skill.lower() for skill in required_skills
-    )
+    # TF-IDF can't build a vocabulary from nothing
+    if not user_terms or not required_terms:
+        return 0.0
 
-    # Combine both texts so TF-IDF uses the same vocabulary
-    documents = [
-        user_text,
-        required_text
-    ]
+    # Both lists in one fit so TF-IDF uses the same vocabulary.
+    # analyzer=identity: each list item is already one term.
+    documents = [user_terms, required_terms]
 
-    vectorizer = TfidfVectorizer()
+    vectorizer = TfidfVectorizer(analyzer=lambda terms: terms)
 
     tfidf_matrix = vectorizer.fit_transform(documents)
 
@@ -28,6 +39,38 @@ def calculate_cosine_similarity(user_skills, required_skills):
     )[0][0]
 
     return round(float(similarity), 4)
+
+
+def curriculum_market_similarity(program_skills, market_demand):
+    """
+    TF-IDF + cosine similarity between a program's curriculum and the job
+    market for its careers (Objective 2.2, curriculum alignment).
+
+    program_skills: skills the program teaches (each counted once)
+    market_demand:  {skill: number of postings mentioning it}
+
+    Documents (each skill is one term):
+      curriculum = every taught skill once
+      market     = each in-demand skill repeated by its posting count, so
+                   skills employers ask for more weigh more (term frequency)
+    Returns a value from 0 (no overlap) to 1 (same skills in the same
+    proportions), or 0.0 when either side is empty.
+    """
+    curriculum = sorted({_normalize_skill(s) for s in program_skills if _normalize_skill(s)})
+
+    market = []
+    for skill, count in (market_demand or {}).items():
+        term = _normalize_skill(skill)
+        if term and int(count) > 0:
+            market.extend([term] * int(count))
+
+    if not curriculum or not market:
+        return 0.0
+
+    vectorizer = TfidfVectorizer(analyzer=lambda terms: terms)
+    matrix = vectorizer.fit_transform([curriculum, market])
+
+    return round(float(cosine_similarity(matrix[0:1], matrix[1:2])[0][0]), 4)
 
 
 def calculate_skill_gap(user_skills, required_skills):

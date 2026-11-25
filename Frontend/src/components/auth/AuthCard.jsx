@@ -17,6 +17,12 @@ export default function AuthCard({ mode }) {
     return "Create your account";
   };
 
+  const getSubtitle = () => {
+    if (isForgot) return "We'll email you a 6-digit code to set a new password.";
+    if (isLogin) return "Log in to continue.";
+    return "It only takes a minute.";
+  };
+
   return (
     <motion.div
       layout
@@ -40,7 +46,7 @@ export default function AuthCard({ mode }) {
       }}
       className="
         w-full
-        max-w-[440px]
+        max-w-[460px]
         rounded-[32px]
         border
         border-border
@@ -150,6 +156,7 @@ export default function AuthCard({ mode }) {
           >
             {getHeading()}
           </h1>
+          <p className="mt-2 text-sm text-muted">{getSubtitle()}</p>
         </motion.div>
       </AnimatePresence>
 

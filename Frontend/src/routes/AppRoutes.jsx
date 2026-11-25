@@ -16,6 +16,7 @@ import JobsPage from "../pages/JobsPage";
 import JobDetailsPage from "../pages/JobDetailsPage";
 import CareerRoadmapPage from "../pages/CareerRoadmapPage";
 import CurriculumAlignmentPage from "../pages/CurriculumAlignmentPage";
+import VerifyEmailPage from "../pages/VerifyEmailPage";
 
 // Admin Pages
 import AdminDashboardPage from "../pages/AdminDashboardPage.jsx";
@@ -24,9 +25,9 @@ import AdminSkillsPage from "../pages/AdminSkillsPage.jsx";
 import AdminInterestsPage from "../pages/AdminInterestsPage.jsx";
 import AdminMappingsPage from "../pages/AdminMappingsPage.jsx";
 import AdminJobsPage from "../pages/AdminJobsPage.jsx";
-import AdminAnalyticsPage from "../pages/AdminAnalyticsPage.jsx";
 import AdminCatalogPage from "../pages/AdminCatalogPage.jsx";
 import AdminSettingsPage from "../pages/AdminSettingsPage.jsx";
+import AdminCurriculumPage from "../pages/AdminCurriculumPage.jsx";
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -42,6 +43,36 @@ function ProtectedRoute({ children }) {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children;
+}
+
+// Admin pages: only role 1. Others are sent to their dashboard (the pages
+// used to open for anyone logged in, and every data request then failed
+// with "Admins only").
+const ADMIN_ROLE_ID = 1;
+
+function RequireAdmin({ children }) {
+  const { user } = useAuth();
+
+  if (Number(user?.role_id) !== ADMIN_ROLE_ID) {
+    return <Navigate to="/dashboard" replace state={{ adminOnly: true }} />;
+  }
+
+  return children;
+}
+
+// Users who have a profile but haven't confirmed its email are sent to
+// /verify-email first, then back to where they were going.
+function RequireVerifiedEmail({ children }) {
+  const { user } = useAuth();
+  const location = useLocation();
+  const profile = user?.UserProfile;
+
+  if (profile && !profile.email_verified_at) {
+    const next = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/verify-email?next=${next}`} replace />;
   }
 
   return children;
@@ -70,10 +101,20 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/verify-email"
+        element={
+          <ProtectedRoute>
+            <VerifyEmailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/skills"
         element={
           <ProtectedRoute>
-            <SkillsPage />
+            <RequireVerifiedEmail>
+              <SkillsPage />
+            </RequireVerifiedEmail>
           </ProtectedRoute>
         }
       />
@@ -81,7 +122,9 @@ export default function AppRoutes() {
       <Route
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <RequireVerifiedEmail>
+              <DashboardLayout />
+            </RequireVerifiedEmail>
           </ProtectedRoute>
         }
       >
@@ -105,7 +148,9 @@ export default function AppRoutes() {
       <Route
         element={
           <ProtectedRoute>
-            <AdminLayout />
+            <RequireAdmin>
+              <AdminLayout />
+            </RequireAdmin>
           </ProtectedRoute>
         }
       >
@@ -115,9 +160,9 @@ export default function AppRoutes() {
         <Route path="/admin/interests" element={<AdminInterestsPage />} />
         <Route path="/admin/mappings" element={<AdminMappingsPage />} />
         <Route path="/admin/jobs" element={<AdminJobsPage />} />
-        <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
         <Route path="/admin/catalog" element={<AdminCatalogPage />} />
         <Route path="/admin/settings" element={<AdminSettingsPage />} />
+        <Route path="/admin/curriculum" element={<AdminCurriculumPage />} />
       </Route>
     </Routes>
   );

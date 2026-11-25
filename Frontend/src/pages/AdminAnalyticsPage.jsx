@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   TrendingUp,
   TrendingDown,
+  Minus,
   BarChart3,
   Loader2,
   Sparkles,
@@ -9,11 +10,9 @@ import {
 } from "lucide-react";
 import { API } from "@/api/api.js";
 
-const PERIOD_OPTIONS = [
-  { value: 3, label: "Next 3 Months" },
-  { value: 6, label: "Next 6 Months" },
-  { value: 12, label: "Next 12 Months" },
-];
+// Same horizons as the user-facing forecast (CareerRoadmapPage): 1–5 years
+const PERIOD_OPTIONS = [12, 24, 36, 48, 60];
+const MAX_PERIODS = 60;
 
 const FALLBACK_PROGRAMS = [
   { program_id: 1, program_code: "BSCS", program_name: "BS Computer Science" },
@@ -21,59 +20,108 @@ const FALLBACK_PROGRAMS = [
 ];
 
 const FALLBACK_FORECASTS = [
-  { skill_name: "Python", demand_score: 92, growth_rate: 18, trend: "rising" },
-  { skill_name: "React", demand_score: 86, growth_rate: 14, trend: "rising" },
-  { skill_name: "Cloud & DevOps", demand_score: 81, growth_rate: 22, trend: "rising" },
-  { skill_name: "SQL & Databases", demand_score: 76, growth_rate: 6, trend: "rising" },
-  { skill_name: "TypeScript", demand_score: 74, growth_rate: 15, trend: "rising" },
-  { skill_name: "Legacy jQuery", demand_score: 34, growth_rate: -11, trend: "declining" },
+  { skill_name: "Python", current_share: 38, projected_share: 44.5, change: 6.5, trend: "rising" },
+  { skill_name: "React", current_share: 31, projected_share: 35.2, change: 4.2, trend: "rising" },
+  { skill_name: "Cloud & DevOps", current_share: 24, projected_share: 30.1, change: 6.1, trend: "rising" },
+  { skill_name: "SQL & Databases", current_share: 29, projected_share: 29.4, change: 0.4, trend: "stable" },
+  { skill_name: "TypeScript", current_share: 20, projected_share: 24.8, change: 4.8, trend: "rising" },
+  { skill_name: "Legacy jQuery", current_share: 9, projected_share: 5.3, change: -3.7, trend: "declining" },
 ];
 
+// Forecast values are "% of job postings that mention the skill" (share)
+const shareOf = (h) => Number(h?.share ?? h?.demand) || 0;
+const round1 = (n) => Math.round(n * 10) / 10;
+
+function formatPeriod(months) {
+  if (months % 12 === 0) {
+    const years = months / 12;
+    return `${years} ${years === 1 ? "Year" : "Years"}`;
+  }
+  return `${months} ${months === 1 ? "Month" : "Months"}`;
+}
+
+function trendFromStatus(status) {
+  const s = String(status || "").toLowerCase();
+  if (s.startsWith("rising")) return "rising";
+  if (s.startsWith("declin")) return "declining";
+  if (s.startsWith("stable")) return "stable";
+  return "insufficient";
+}
+
+// Backend shape (trendServices.getSkillForecasts):
+// { skill, history: [{ month, demand, total, share }], forecast: [{ month, predicted_demand }], status }
 function normalizeForecastItems(raw) {
-  const list =
-    raw?.forecasts || raw?.skills || raw?.data || (Array.isArray(raw) ? raw : []);
-  if (!Array.isArray(list) || list.length === 0) return [];
+  const list = raw?.data ?? (Array.isArray(raw) ? raw : []);
+  if (!Array.isArray(list)) return [];
 
-  return list.map((item, idx) => {
-    const name =
-      item.skill_name ||
-      item.skill_set_name ||
-      item.skill ||
-      item.name ||
-      `Skill #${idx + 1}`;
-    const growth = Number(
-      item.growth_rate ?? item.change_percentage ?? item.delta ?? 0
-    );
-    const score = Math.min(
-      100,
-      Math.max(
-        10,
-        Number(
-          item.demand_score ??
-            item.predicted_demand ??
-            item.score ??
-            item.forecast_value ??
-            65
-        )
-      )
-    );
-    const trend =
-      item.trend ||
-      (growth < 0 ? "declining" : "rising");
+  return list
+    .map((item, idx) => {
+      const current = shareOf(item.history?.at(-1));
+      const end = item.forecast?.at(-1);
+      const projected = end
+        ? round1(Math.min(100, Math.max(0, Number(end.predicted_demand) || 0)))
+        : null;
 
-    return {
-      skill_name: name,
-      demand_score: Math.round(score),
-      growth_rate: Number.isFinite(growth) ? Math.round(growth) : 0,
-      trend,
-    };
-  });
+      return {
+        skill_name: item.skill || `Skill #${idx + 1}`,
+        current_share: current,
+        projected_share: projected,
+        change: projected === null ? null : round1(projected - current),
+        trend: trendFromStatus(item.status),
+      };
+    })
+    .sort(
+      (a, b) =>
+        (b.projected_share ?? b.current_share) -
+        (a.projected_share ?? a.current_share)
+    );
+}
+
+const TREND_BADGE = {
+  rising:
+    "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+  declining:
+    "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+  stable: "bg-surface-alt text-muted",
+  insufficient: "bg-surface-alt text-muted",
+};
+
+const TREND_BAR = {
+  rising: "bg-gradient-to-r from-[#5B4BFF] to-[#7A5CFF]",
+  declining: "bg-amber-500",
+  stable: "bg-[#7A5CFF]/60",
+  insufficient: "bg-border",
+};
+
+function ChangeBadge({ item }) {
+  const Icon =
+    item.trend === "rising"
+      ? TrendingUp
+      : item.trend === "declining"
+        ? TrendingDown
+        : Minus;
+
+  const label =
+    item.change === null
+      ? "Not enough data"
+      : `${item.change > 0 ? "+" : ""}${item.change} pts`;
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${TREND_BADGE[item.trend]}`}
+    >
+      <Icon className="h-3 w-3" />
+      {label}
+    </span>
+  );
 }
 
 export default function AdminAnalyticsPage() {
   const [programs, setPrograms] = useState([]);
   const [selectedProgramId, setSelectedProgramId] = useState("");
-  const [periods, setPeriods] = useState(6);
+  const [periods, setPeriods] = useState(36);
+  const [customMonths, setCustomMonths] = useState("36");
+  const [monthsError, setMonthsError] = useState(null);
   const [forecasts, setForecasts] = useState([]);
   const [usingFallback, setUsingFallback] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -137,15 +185,43 @@ export default function AdminAnalyticsPage() {
     };
   }, [selectedProgramId, periods]);
 
-  const risingCount = forecasts.filter((f) => f.trend !== "declining").length;
+  function selectPreset(months) {
+    setPeriods(months);
+    setCustomMonths(String(months));
+    setMonthsError(null);
+  }
+
+  function applyCustomMonths(e) {
+    e.preventDefault();
+    const months = Number(customMonths);
+    if (!customMonths || !Number.isInteger(months) || months < 1) {
+      setMonthsError("Enter a whole number of months, from 1 to 60.");
+      return;
+    }
+    if (months > MAX_PERIODS) {
+      setMonthsError("You can forecast up to 5 years (60 months) ahead.");
+      return;
+    }
+    setMonthsError(null);
+    setPeriods(months);
+  }
+
+  const risingCount = forecasts.filter((f) => f.trend === "rising").length;
   const decliningCount = forecasts.filter((f) => f.trend === "declining").length;
+  const withForecast = forecasts.filter((f) => f.projected_share !== null);
   const avgDemand =
-    forecasts.length > 0
-      ? Math.round(
-          forecasts.reduce((acc, cur) => acc + cur.demand_score, 0) /
-            forecasts.length
+    withForecast.length > 0
+      ? round1(
+          withForecast.reduce((acc, cur) => acc + cur.projected_share, 0) /
+            withForecast.length
         )
       : 0;
+
+  // Shares are often small (e.g. 5–40%), so bar length is relative to the top skill
+  const maxShare = Math.max(
+    1,
+    ...forecasts.map((f) => f.projected_share ?? f.current_share)
+  );
 
   return (
     <section className="space-y-6 p-6">
@@ -188,21 +264,76 @@ export default function AdminAnalyticsPage() {
           })}
         </div>
 
-        <div className="flex flex-wrap gap-1.5 rounded-xl bg-surface-alt p-1">
-          {PERIOD_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => setPeriods(opt.value)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                periods === opt.value
-                  ? "bg-surface text-primary shadow-soft"
-                  : "text-muted hover:text-ink"
-              }`}
+        <div className="flex flex-col gap-2 md:items-end">
+          <div className="flex flex-wrap items-center gap-2">
+            <div
+              className="flex flex-wrap gap-1.5 rounded-xl bg-surface-alt p-1"
+              role="group"
+              aria-label="Forecast period"
             >
-              {opt.label}
-            </button>
-          ))}
+              {PERIOD_OPTIONS.map((months) => (
+                <button
+                  key={months}
+                  type="button"
+                  onClick={() => selectPreset(months)}
+                  aria-pressed={periods === months}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                    periods === months
+                      ? "bg-surface text-primary shadow-soft"
+                      : "text-muted hover:text-ink"
+                  }`}
+                >
+                  {formatPeriod(months)}
+                </button>
+              ))}
+            </div>
+
+            <form
+              onSubmit={applyCustomMonths}
+              className="flex items-center gap-1.5"
+              noValidate
+            >
+              <label
+                htmlFor="admin-forecast-months"
+                className="text-xs font-semibold text-muted"
+              >
+                Months:
+              </label>
+              <input
+                id="admin-forecast-months"
+                type="number"
+                inputMode="numeric"
+                min="1"
+                max={MAX_PERIODS}
+                step="1"
+                value={customMonths}
+                onChange={(e) => {
+                  setCustomMonths(e.target.value);
+                  setMonthsError(null);
+                }}
+                placeholder="e.g. 18"
+                aria-invalid={Boolean(monthsError)}
+                aria-describedby={monthsError ? "admin-months-error" : undefined}
+                className="w-20 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-ink placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              />
+              <button
+                type="submit"
+                className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90"
+              >
+                Apply
+              </button>
+            </form>
+          </div>
+
+          {monthsError && (
+            <p
+              id="admin-months-error"
+              role="alert"
+              className="text-xs text-rose-700 dark:text-rose-300"
+            >
+              {monthsError}
+            </p>
+          )}
         </div>
       </div>
 
@@ -231,22 +362,30 @@ export default function AdminAnalyticsPage() {
         <div className="rounded-2xl border border-border bg-surface p-5 shadow-soft">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted">
-              Avg Demand Score
+              Avg Projected Share of Postings
             </span>
             <BarChart3 className="h-4 w-4 text-primary" />
           </div>
-          <p className="mt-2 text-3xl font-extrabold text-ink">{avgDemand}%</p>
+          <p className="mt-2 text-3xl font-extrabold text-ink">
+            {withForecast.length > 0 ? `${avgDemand}%` : "—"}
+          </p>
         </div>
       </div>
 
       {/* Forecast Bars */}
       <div className="rounded-2xl border border-border bg-surface p-6 shadow-soft">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <h2 className="text-base font-bold text-ink">
-              Projected Skill Demand ({periods} months)
-            </h2>
+          <div>
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <h2 className="text-base font-bold text-ink">
+                Projected Skill Demand ({formatPeriod(periods).toLowerCase()})
+              </h2>
+            </div>
+            <p className="mt-1 text-xs text-muted">
+              % of job postings mentioning each skill at the end of the
+              forecast. Change is in percentage points from the latest month.
+            </p>
           </div>
           {usingFallback && (
             <span className="rounded-full bg-surface-alt px-3 py-1 text-[11px] font-medium text-muted">
@@ -263,42 +402,25 @@ export default function AdminAnalyticsPage() {
         ) : (
           <div className="space-y-4">
             {forecasts.map((item) => {
-              const isDeclining = item.trend === "declining";
+              const value = item.projected_share ?? item.current_share;
               return (
                 <div key={item.skill_name} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center justify-between gap-3 text-sm">
                     <span className="font-semibold text-ink">
                       {item.skill_name}
                     </span>
                     <div className="flex items-center gap-3">
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                          isDeclining
-                            ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
-                            : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                        }`}
-                      >
-                        {isDeclining ? (
-                          <TrendingDown className="h-3 w-3" />
-                        ) : (
-                          <TrendingUp className="h-3 w-3" />
-                        )}
-                        {item.growth_rate > 0 ? `+${item.growth_rate}%` : `${item.growth_rate}%`}
-                      </span>
-                      <span className="w-10 text-right text-xs font-bold text-muted">
-                        {item.demand_score}%
+                      <ChangeBadge item={item} />
+                      <span className="w-12 text-right text-xs font-bold text-muted">
+                        {value}%
                       </span>
                     </div>
                   </div>
 
                   <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-alt">
                     <div
-                      style={{ width: `${item.demand_score}%` }}
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        isDeclining
-                          ? "bg-amber-500"
-                          : "bg-gradient-to-r from-[#5B4BFF] to-[#7A5CFF]"
-                      }`}
+                      style={{ width: `${(value / maxShare) * 100}%` }}
+                      className={`h-full rounded-full transition-all duration-500 ${TREND_BAR[item.trend]}`}
                     />
                   </div>
                 </div>

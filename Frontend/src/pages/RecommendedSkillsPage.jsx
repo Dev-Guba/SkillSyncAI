@@ -1,8 +1,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { Sparkles } from "lucide-react";
+
 import { API } from "../api/api.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import SharedPageHeader from "../components/common/PageHeader";
 
 // ==========================================
 // HELPERS
@@ -216,7 +219,7 @@ function ScoreTile({ value, label, title, children }) {
 function ScoreExplainer({ hasCosine }) {
   return (
     <details className="mt-5 rounded-lg bg-slate-50 p-4 dark:bg-slate-800/50">
-      <summary className="cursor-pointer rounded text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
+      <summary className="cursor-pointer rounded text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
         How are these scores calculated?
       </summary>
 
@@ -306,23 +309,22 @@ function ChevronIcon({ open }) {
 
 function PageHeader({ jobName, subtitle }) {
   return (
-    <div>
-      <h1 className="text-3xl font-bold tracking-tight">
-        Recommended Skills
-      </h1>
-
-      <p className="mt-2 text-slate-500">
-        {subtitle}
-        {jobName && (
-          <>
-            {" "}
-            <span className="font-semibold text-slate-900 dark:text-slate-100">
-              {jobName}
-            </span>
-          </>
-        )}
-      </p>
-    </div>
+    <SharedPageHeader
+      icon={Sparkles}
+      eyebrow="Skill gap & learning plan"
+      title="Recommended Skills"
+      subtitle={
+        <>
+          {subtitle}
+          {jobName && (
+            <>
+              {" "}
+              <span className="font-semibold text-ink">{jobName}</span>
+            </>
+          )}
+        </>
+      }
+    />
   );
 }
 
@@ -331,28 +333,6 @@ function SkeletonBlock({ className = "" }) {
     <div
       className={`animate-pulse rounded-md bg-slate-200 dark:bg-slate-700 ${className}`}
     />
-  );
-}
-
-function RecommendationSkeletons({ count }) {
-  return (
-    <div className="space-y-3" aria-busy="true" aria-live="polite">
-      <p className="text-sm text-slate-500">
-        Building your learning plan. Your skill gap is ready above.
-      </p>
-
-      {Array.from({ length: Math.min(Math.max(count, 2), 4) }).map(
-        (_, i) => (
-          <div
-            key={i}
-            className="rounded-xl border border-slate-200 p-5 dark:border-slate-700"
-          >
-            <SkeletonBlock className="h-5 w-1/3" />
-            <SkeletonBlock className="mt-3 h-4 w-3/4" />
-          </div>
-        )
-      )}
-    </div>
   );
 }
 
@@ -383,7 +363,7 @@ function RecommendationCard({
   return (
     <div
       id={`skill-${id}`}
-      className="scroll-mt-24 rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+      className="scroll-mt-24 rounded-2xl border border-border bg-surface shadow-soft"
     >
       {/* HEADER */}
 
@@ -393,7 +373,7 @@ function RecommendationCard({
           onClick={onToggle}
           aria-expanded={open}
           aria-controls={`panel-${id}`}
-          className="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          className="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
         >
           <div className="min-w-0 flex-1">
             <h3 className="text-lg font-semibold">
@@ -415,7 +395,7 @@ function RecommendationCard({
             href={primary.url}
             target="_blank"
             rel="noreferrer"
-            className="hidden shrink-0 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 sm:inline-block"
+            className="hidden shrink-0 rounded-lg bg-brand-gradient px-4 py-2 text-sm font-medium text-white shadow-md shadow-primary/20 hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 sm:inline-block"
           >
             Start learning
           </a>
@@ -442,7 +422,7 @@ function RecommendationCard({
               href={primary.url}
               target="_blank"
               rel="noreferrer"
-              className="block rounded-lg bg-indigo-600 px-4 py-3 text-center text-sm font-medium text-white hover:bg-indigo-500 sm:hidden"
+              className="block rounded-lg bg-brand-gradient px-4 py-3 text-center text-sm font-medium text-white hover:brightness-110 sm:hidden"
             >
               Start with {primary.title}
             </a>
@@ -462,7 +442,7 @@ function RecommendationCard({
                       className="flex gap-2 text-sm text-slate-700 dark:text-slate-300"
                     >
                       <span
-                        className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-500"
+                        className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary-500"
                         aria-hidden="true"
                       />
                       <span>{item}</span>
@@ -485,7 +465,7 @@ function RecommendationCard({
                         href={resource.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="block rounded-lg border border-slate-200 px-3 py-2 text-sm hover:border-indigo-400 hover:bg-indigo-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                        className="block rounded-lg border border-slate-200 px-3 py-2 text-sm hover:border-primary-400 hover:bg-primary-50 dark:border-slate-700 dark:hover:bg-slate-800"
                       >
                         <span className="font-medium">
                           {resource.title}
@@ -507,7 +487,7 @@ function RecommendationCard({
           {/* PRACTICE */}
 
           {recommendation.practice && (
-            <div className="rounded-lg bg-indigo-50 p-4 dark:bg-indigo-950/40">
+            <div className="rounded-lg bg-primary-50 p-4 dark:bg-primary-900/30">
               <h4 className="font-semibold">Practice this</h4>
               <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
                 {recommendation.practice}
@@ -547,7 +527,7 @@ function RecommendationCard({
                       onProficiencyChange(event.target.value)
                     }
                     disabled={isApplying}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
                   >
                     <option value="Beginner">Beginner</option>
                     <option value="Intermediate">Intermediate</option>
@@ -978,7 +958,7 @@ export default function RecommendedSkillsPage() {
   if (gapLoading) {
     return (
       <section
-        className="mx-auto max-w-4xl space-y-6 p-6"
+        className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8"
         aria-busy="true"
       >
         <PageHeader
@@ -986,7 +966,7 @@ export default function RecommendedSkillsPage() {
           jobName={jobTitle?.job_title_name}
         />
 
-        <div className="rounded-xl border border-slate-200 p-6 dark:border-slate-700">
+        <div className="rounded-3xl border border-border bg-surface p-6 shadow-soft">
           <div className="flex items-center gap-5">
             <SkeletonBlock className="h-24 w-24 rounded-full" />
 
@@ -1006,7 +986,7 @@ export default function RecommendedSkillsPage() {
 
   if (gapError) {
     return (
-      <section className="mx-auto max-w-4xl space-y-6 p-6">
+      <section className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8">
         <PageHeader
           subtitle="Skills to build for"
           jobName={jobTitle?.job_title_name}
@@ -1036,7 +1016,7 @@ export default function RecommendedSkillsPage() {
 
   if (!aiData) {
     return (
-      <section className="mx-auto max-w-4xl space-y-6 p-6">
+      <section className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8">
         <PageHeader
           subtitle="Skills to build for"
           jobName={jobTitle?.job_title_name}
@@ -1054,7 +1034,7 @@ export default function RecommendedSkillsPage() {
   // ==========================================
 
   return (
-    <section className="mx-auto max-w-4xl space-y-8 p-6">
+    <section className="mx-auto max-w-5xl space-y-8 p-4 sm:p-6 lg:p-8">
       <PageHeader
         subtitle="Skills to build for"
         jobName={jobTitle?.job_title_name}
@@ -1062,7 +1042,7 @@ export default function RecommendedSkillsPage() {
 
       {/* SKILL GAP SUMMARY */}
 
-      <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-700 sm:p-6">
+      <div className="rounded-3xl border border-border bg-surface p-5 shadow-soft sm:p-6">
         {/* SCORES */}
 
         <div className={`grid gap-6 ${hasCosine ? "sm:grid-cols-2" : ""}`}>
@@ -1125,7 +1105,9 @@ export default function RecommendedSkillsPage() {
 
               <div className="mt-3 flex flex-wrap gap-2">
                 {missingSkills.map((skill) => {
-                  const ready = !learningLoading;
+                  // Quick-link cards exist right away, so jumping works even
+                  // while the AI plan is still loading
+                  const ready = true;
 
                   return (
                     <button
@@ -1133,7 +1115,7 @@ export default function RecommendedSkillsPage() {
                       type="button"
                       onClick={() => jumpToSkill(skill)}
                       disabled={!ready}
-                      className={`rounded-full border px-3 py-1 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                      className={`rounded-full border px-3 py-1 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
                         ready
                           ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200"
                           : "cursor-default border-slate-200 text-slate-500 dark:border-slate-700"
@@ -1172,14 +1154,17 @@ export default function RecommendedSkillsPage() {
 
       {missingSkills.length > 0 && (
         <div className="space-y-4">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              How to develop these skills
-            </h2>
+          <div className="flex items-start gap-3">
+            <span className="bg-brand-gradient mt-1 h-8 w-1.5 shrink-0 rounded-full" aria-hidden="true" />
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight text-ink">
+                How to develop these skills
+              </h2>
 
-            <p className="mt-1 text-slate-500">
-              AI-generated plan based on your missing skills.
-            </p>
+              <p className="mt-1 text-muted">
+                AI-generated plan based on your missing skills.
+              </p>
+            </div>
           </div>
 
           {catalogError && (
@@ -1192,8 +1177,16 @@ export default function RecommendedSkillsPage() {
             </div>
           )}
 
+          {/* While the AI plan loads, the quick-link cards below are already
+              usable; this note says a detailed plan is on its way. */}
           {learningLoading && (
-            <RecommendationSkeletons count={missingSkills.length} />
+            <p
+              className="flex items-center gap-2 rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3 text-sm text-primary"
+              aria-live="polite"
+            >
+              <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+              The AI is preparing a detailed plan. Quick learning links are ready below in the meantime.
+            </p>
           )}
 
           {!learningLoading &&
@@ -1218,7 +1211,8 @@ export default function RecommendedSkillsPage() {
               </div>
             )}
 
-          {!learningLoading && (
+          {/* Shown right away: AI plans where available, quick links otherwise */}
+          {(
             <div className="space-y-3">
               {planItems.map((recommendation) => {
                 const skillKey = normalizeSkillName(

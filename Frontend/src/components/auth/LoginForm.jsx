@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
 import {
   User,
@@ -40,7 +40,20 @@ export default function LoginForm() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [searchParams] = useSearchParams();
+  // "/login?expired=1" is where Http.js sends users whose session ran out
+  // "/login?deactivated=1": an admin deactivated the account mid-session
+  const [errors, setErrors] = useState(() => {
+    if (searchParams.get("deactivated") === "1") {
+      return {
+        form: "Your account has been deactivated. Contact the SkillSyncAI team at officialskillsyncai@gmail.com if you think this is a mistake.",
+      };
+    }
+    if (searchParams.get("expired") === "1") {
+      return { form: "Your session expired. Please log in again." };
+    }
+    return {};
+  });
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -90,11 +103,8 @@ export default function LoginForm() {
       const response = await login(formData);
       const user = response.user;
 
-      const isAdminUser =
-        Number(user?.role_id) === 1 ||
-        user?.Role?.role_name?.toLowerCase() === "admin" ||
-        user?.role?.toLowerCase() === "admin" ||
-        user?.username?.toLowerCase() === "admin";
+      // Same rule as the server: admin = role 1 (not the username)
+      const isAdminUser = Number(user?.role_id) === 1;
 
       if (isAdminUser) {
         setAdminMode?.(true);

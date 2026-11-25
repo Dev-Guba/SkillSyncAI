@@ -1,470 +1,179 @@
+import { useEffect, useState } from "react";
 
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import {
-  Search,
-  Check,
-  Sparkles,
-  Compass,
-  Sliders,
-  ArrowRight,
-  Loader2,
-} from "lucide-react";
+import SkillGapScore from "../components/dashboard/SkillGapScore";
+import MissingSkills from "../components/dashboard/MissingSkills";
+import AIRecommendation from "../components/dashboard/AIRecommendation";
 
-import { useAuth } from "../context/AuthContext.jsx";
-import logo from "../assets/logos/logo.png";
 import { API } from "../api/api.js";
+import { useAuth } from "../context/AuthContext.jsx";
 
-const MIN_SELECTION = 3;
-const PROFICIENCY_LEVELS = ["Beginner", "Intermediate", "Advanced"];
+export default function SkillGapPage() {
+  const { user } = useAuth();
 
-function ChipSection({
-  title,
-  caption,
-  icon: Icon,
-  items,
-  selected,
-  onToggle,
-  emptyHint,
-  idKey = "skill_set_id",
-  nameKey = "skill_set_name",
-}) {
-  return (
-    <div>
-      <div className="mb-4 flex items-center gap-2">
-        <Icon className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-semibold text-ink">{title}</h2>
-        <span className="text-sm text-muted">— {caption}</span>
-      </div>
-
-      {items.length === 0 ? (
-        <p className="text-sm text-muted">{emptyHint}</p>
-      ) : (
-        <div className="flex flex-wrap gap-3">
-          {items.map((item) => {
-            const itemId = item[idKey];
-            const itemName = item[nameKey];
-
-            const isSelected = selected.some(
-              (sel) => sel[idKey] === itemId
-            );
-
-            return (
-              <motion.button
-                key={itemId}
-                type="button"
-                whileTap={{ scale: 0.95 }}
-                onClick={() => onToggle(item)}
-                className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
-                  isSelected
-                    ? "bg-gradient-to-r from-[#5B4BFF] to-[#7A5CFF] text-white border-transparent"
-                    : "border-border text-ink hover:border-primary"
-                }`}
-              >
-                {isSelected && <Check className="h-3.5 w-3.5" />}
-                {itemName}
-              </motion.button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function getScoreStyle(score) {
-  if (score >= 75) {
-    return {
-      card: "border-green-300 bg-green-50",
-      badge: "bg-green-100 text-green-700",
-    };
-  }
-
-  if (score >= 50) {
-    return {
-      card: "border-yellow-300 bg-yellow-50",
-      badge: "bg-yellow-100 text-yellow-700",
-    };
-  }
-
-  return {
-    card: "border-gray-300 bg-gray-50",
-    badge: "bg-gray-200 text-gray-600",
-  };
-}
-
-export default function SkillsPage() {
-  const navigate = useNavigate();
-  const { refreshUser } = useAuth();
-
-  const [search, setSearch] = useState("");
-
-  // PROGRAM SKILLS
-  const [skills, setSkills] = useState([]);
-
-  // USER SELECTED
-  const [selectedSkills, setSelectedSkills] = useState([]);
-  const [selectedJobTitle, setSelectedJobTitle] = useState(null);
-
-  // AI RECOMMENDATIONS
-  const [careerRecommendations, setCareerRecommendations] = useState([]);
-  const [loadingRecommendations, setLoadingRecommendations] =
-    useState(false);
+  const [aiData, setAiData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchProgramData();
-  }, []);
+    if (user) {
+      fetchAIAnalysis();
+    }
+  }, [user]);
 
-  /*
-  |--------------------------------------------------------------------------
-  | GET PROGRAM SKILLS
-  |--------------------------------------------------------------------------
-  */
-  const fetchProgramData = async () => {
+  const fetchAIAnalysis = async () => {
     try {
-      const programId = localStorage.getItem("selectedProgram");
+      console.log("CURRENT USER:", user);
 
-      if (!programId) {
-        console.log("No program selected");
+      const jobTitle = user.JobTitles?.[0];
+
+      if (!jobTitle) {
+        console.error("No target job title found");
+        setLoading(false);
         return;
       }
 
-      const skillsResponse = await API.getProgramSkills(programId);
+      // Unique cache key for this user's selected career
+      const cacheKey =
+        `skillGap_${user.user_id}_${jobTitle.job_title_id}`;
 
-      setSkills(skillsResponse.data?.data || []);
-    } catch (error) {
-      console.error("Program loading error:", error);
-    }
-  };
+      // ==========================================
+      // CHECK CACHE
+      // ==========================================
 
-  /*
-  |--------------------------------------------------------------------------
-  | TOGGLE SKILL
-  |--------------------------------------------------------------------------
-  */
-  const toggleSkill = (skill) => {
-    const exists = selectedSkills.some(
-      (item) => item.skill_set_id === skill.skill_set_id
-    );
+      const cachedData =
+        sessionStorage.getItem(cacheKey);
 
-    if (exists) {
-      setSelectedSkills(
-        selectedSkills.filter(
-          (item) => item.skill_set_id !== skill.skill_set_id
-        )
-      );
-    } else {
-      setSelectedSkills([
-        ...selectedSkills,
-        { ...skill, proficiency_level: "Beginner" },
-      ]);
-    }
-  };
-
-  /*
-  |--------------------------------------------------------------------------
-  | UPDATE SKILL PROFICIENCY
-  |--------------------------------------------------------------------------
-  */
-  const updateSkillProficiency = (skillSetId, level) => {
-    setSelectedSkills((prev) =>
-      prev.map((skill) =>
-        skill.skill_set_id === skillSetId
-          ? { ...skill, proficiency_level: level }
-          : skill
-      )
-    );
-  };
-
-  /*
-  |--------------------------------------------------------------------------
-  | GET AI CAREER RECOMMENDATIONS
-  |--------------------------------------------------------------------------
-  */
-  useEffect(() => {
-    if (selectedSkills.length < MIN_SELECTION) {
-      setCareerRecommendations([]);
-      setSelectedJobTitle(null);
-      return;
-    }
-
-    const getRecommendations = async () => {
-      try {
-        setLoadingRecommendations(true);
-        setSelectedJobTitle(null);
-
-        const programId = localStorage.getItem("selectedProgram");
-
-        const userSkills = selectedSkills.map(
-          (skill) => skill.skill_set_name
+      if (cachedData) {
+        console.log(
+          "===== USING CACHED SKILL GAP ====="
         );
 
-        const response = await API.getCareerRecommendations({
-          programId,
-          userSkills,
-        });
+        const parsedData =
+          JSON.parse(cachedData);
 
-        const recommendations = response.data?.data || [];
+        setAiData(parsedData);
+        setLoading(false);
 
-        const visibleRecommendations = recommendations.filter(
-          (career) => career.match_percentage > 0
-        );
-
-        setCareerRecommendations(visibleRecommendations);
-      } catch (error) {
-        console.error("Career recommendation error:", error);
-        setCareerRecommendations([]);
-      } finally {
-        setLoadingRecommendations(false);
+        return;
       }
-    };
 
-    getRecommendations();
-  }, [selectedSkills]);
+      // ==========================================
+      // NO CACHE → ANALYZE
+      // ==========================================
 
-  const query = search.toLowerCase();
+      const payload = {
+        user_id: user.user_id,
+        job_title_id: jobTitle.job_title_id,
+      };
 
-  const filteredSkills = skills.filter((skill) =>
-    (skill.skill_set_name || "").toLowerCase().includes(query)
-  );
-
-  const totalSelected = selectedSkills.length;
-
-  const canContinue =
-    totalSelected >= MIN_SELECTION && selectedJobTitle;
-
-  /*
-  |--------------------------------------------------------------------------
-  | FINISH SETUP
-  |--------------------------------------------------------------------------
-  */
-  const handleContinue = async () => {
-    if (!canContinue) return;
-
-    try {
-      const payloadSkills = selectedSkills.map((skill) => ({
-        skill_set_id: skill.skill_set_id,
-        proficiency_level: skill.proficiency_level || "Beginner",
-      }));
-
-      await API.createUserSkills({
-        skills: payloadSkills,
-      });
-
-      await API.createUserJobTitle({
-        job_title_id: selectedJobTitle,
-      });
-
-      await refreshUser();
-
-      navigate("/dashboard");
-    } catch (error) {
-      console.error(error);
-
-      alert(
-        error.response?.data?.message || "Failed setup."
+      console.log(
+        "===== ANALYZING SKILL GAP ====="
       );
+
+      console.log(
+        "AI REQUEST:",
+        payload
+      );
+
+      const response =
+        await API.getAIRecommendation(
+          payload
+        );
+
+      console.log(
+        "AI RESPONSE:",
+        response.data
+      );
+
+      const result =
+        response.data.data;
+
+      // Save result
+      sessionStorage.setItem(
+        cacheKey,
+        JSON.stringify(result)
+      );
+
+      setAiData(result);
+
+    } catch (error) {
+
+      console.error(
+        "AI loading error:",
+        error.response?.data ||
+        error
+      );
+
+    } finally {
+
+      setLoading(false);
+
     }
   };
+
+  if (loading) {
+    return (
+      <section className="p-6">
+        Loading AI analysis...
+      </section>
+    );
+  }
+
+  if (!aiData) {
+    return (
+      <section className="p-6 space-y-4">
+
+        <h1 className="text-3xl font-bold">
+          Skill Gap Analyzer
+        </h1>
+
+        <p className="text-muted">
+          No AI analysis available yet. Please
+          complete your profile and select a
+          target career.
+        </p>
+
+      </section>
+    );
+  }
 
   return (
-    <section className="relative min-h-screen bg-white pb-32 dark:bg-surface">
-      <div className="mx-auto max-w-3xl px-6 pt-16">
-        {/* LOGO */}
-        <div className="flex justify-center">
-          <img
-            src={logo}
-            alt="SkillSyncAI"
-            className="h-14 w-auto max-w-[220px] object-contain"
-          />
-        </div>
+    <section className="space-y-8 p-6">
 
-        {/* SEARCH */}
-        <div className="mb-10 flex h-14 items-center rounded-2xl border px-4">
-          <Search className="mr-3" />
+      <div>
 
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search skills..."
-            className="w-full bg-transparent outline-none"
-          />
-        </div>
+        <h1 className="text-3xl font-bold">
+          Skill Gap Analyzer
+        </h1>
 
-        {/* PROGRAM SKILLS */}
-        <ChipSection
-          title="Program Skills"
-          caption="skills related to your course"
-          icon={Sparkles}
-          items={filteredSkills}
-          selected={selectedSkills}
-          onToggle={toggleSkill}
-          emptyHint="No skills found."
-          idKey="skill_set_id"
-          nameKey="skill_set_name"
+        <p className="mt-2 text-muted">
+          Understand your current skills and what
+          you need to improve for your career goal.
+        </p>
+
+      </div>
+
+      <SkillGapScore
+        score={
+          aiData.analysis?.match_percentage || 0
+        }
+      />
+
+      <div className="grid gap-6 lg:grid-cols-2">
+
+        <MissingSkills
+          skills={
+            aiData.analysis?.missing_skills || []
+          }
         />
 
-        {/* SKILL PROFICIENCY */}
-        {selectedSkills.length > 0 && (
-          <div className="mt-8 rounded-2xl border border-border p-5">
-            <div className="mb-4 flex items-center gap-2">
-              <Sliders className="h-5 w-5 text-primary" />
+        <AIRecommendation
+          recommendation={
+            aiData.recommendation || null
+          }
+        />
 
-              <h2 className="text-lg font-semibold text-ink">
-                Skill Proficiency
-              </h2>
-
-              <span className="text-sm text-muted">
-                — choose your level for each selected skill
-              </span>
-            </div>
-
-            <div className="space-y-3">
-              {selectedSkills.map((skill) => (
-                <div
-                  key={skill.skill_set_id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 px-4 py-2.5"
-                >
-                  <span className="text-sm font-medium text-ink">
-                    {skill.skill_set_name}
-                  </span>
-
-                  <div className="flex gap-1.5">
-                    {PROFICIENCY_LEVELS.map((level) => {
-                      const active =
-                        (skill.proficiency_level || "Beginner") === level;
-
-                      return (
-                        <button
-                          key={level}
-                          type="button"
-                          onClick={() =>
-                            updateSkillProficiency(
-                              skill.skill_set_id,
-                              level
-                            )
-                          }
-                          className={`rounded-lg px-3 py-1 text-xs font-semibold transition ${
-                            active
-                              ? "bg-primary text-white"
-                              : "border border-border text-muted hover:border-primary hover:text-ink"
-                          }`}
-                        >
-                          {level}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* AI CAREER RECOMMENDATIONS */}
-        <div className="mt-12">
-          <div className="mb-5 flex items-center gap-2">
-            <Compass className="h-5 w-5 text-primary" />
-
-            <h2 className="text-lg font-semibold text-ink">
-              Recommended Careers
-            </h2>
-          </div>
-
-          {selectedSkills.length < MIN_SELECTION && (
-            <div className="rounded-2xl border border-dashed border-border p-6 text-center">
-              <p className="text-sm text-muted">
-                Select at least {MIN_SELECTION} skills
-                to get career recommendations.
-              </p>
-            </div>
-          )}
-
-          {loadingRecommendations && (
-            <div className="flex items-center justify-center gap-2 rounded-2xl border border-border p-6">
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
-
-              <p className="text-sm text-muted">
-                Analyzing your skills...
-              </p>
-            </div>
-          )}
-
-          {!loadingRecommendations &&
-            selectedSkills.length >= MIN_SELECTION &&
-            careerRecommendations.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-border p-6 text-center">
-                <p className="text-sm text-muted">
-                  No matching careers found yet.
-                </p>
-              </div>
-            )}
-
-          {!loadingRecommendations &&
-            careerRecommendations.length > 0 && (
-              <div className="space-y-3">
-                {careerRecommendations.map((career) => {
-                  const score = career.match_percentage;
-                  const styles = getScoreStyle(score);
-
-                  const selected =
-                    selectedJobTitle === career.job_title_id;
-
-                  return (
-                    <motion.button
-                      key={career.job_title_id}
-                      type="button"
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() =>
-                        setSelectedJobTitle(career.job_title_id)
-                      }
-                      className={`w-full rounded-2xl border p-4 text-left transition ${styles.card} ${
-                        selected ? "ring-2 ring-primary" : ""
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <h3 className="font-semibold text-ink">
-                            {career.job_title_name}
-                          </h3>
-
-                          <p className="mt-1 text-sm text-muted">
-                            {career.matched_skills?.length || 0} matching skills
-                          </p>
-                        </div>
-
-                        <span
-                          className={`shrink-0 rounded-full px-3 py-1 text-sm font-bold ${styles.badge}`}
-                        >
-                          {score}%
-                        </span>
-                      </div>
-                    </motion.button>
-                  );
-                })}
-              </div>
-            )}
-        </div>
       </div>
 
-      {/* BOTTOM BAR */}
-      <div className="fixed inset-x-0 bottom-0 border-t bg-white p-4 dark:bg-surface">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <p className="text-sm text-ink">
-            {totalSelected} skill{totalSelected === 1 ? "" : "s"} selected
-          </p>
-
-          <button
-            disabled={!canContinue}
-            onClick={handleContinue}
-            className="rounded-xl bg-primary px-6 py-3 text-white disabled:opacity-40"
-          >
-            Finish Setup
-            <ArrowRight className="ml-2 inline" />
-          </button>
-        </div>
-      </div>
     </section>
   );
 }
