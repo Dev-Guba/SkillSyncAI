@@ -7,7 +7,6 @@ import {
   GraduationCap,
   Users,
   GitBranch,
-  BarChart3,
   Settings,
   ArrowRight,
   ShieldCheck,
@@ -143,12 +142,6 @@ export default function AdminDashboardPage() {
       to: "/admin/jobs",
     },
     {
-      title: "Skill Trends & Forecasts",
-      desc: "Monitor rising and declining skills by program.",
-      icon: BarChart3,
-      to: "/admin/analytics",
-    },
-    {
       title: "Admin Settings",
       desc: "Toggle theme and reset local frontend overrides.",
       icon: Settings,
@@ -175,7 +168,7 @@ export default function AdminDashboardPage() {
 
             <p className="mt-2 max-w-2xl text-sm text-muted">
               Manage users, skills, academic programs, job mappings, job
-              imports, and skill demand forecasts from one console.
+              imports, and curriculum alignment from one console.
             </p>
           </div>
 

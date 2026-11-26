@@ -151,10 +151,19 @@ export async function getLearningRecommendations(
             error
         );
 
-        return res.status(500).json({
+        const text = String(error?.message || "");
+        const isQuota = error?.code === "AI_QUOTA" || /quota|RESOURCE_EXHAUSTED/i.test(text);
+        const isBusy =
+            error?.code === "ECONNABORTED" ||
+            /high demand|503|unavailable|overloaded|too long/i.test(text);
+
+        return res.status(isQuota || isBusy ? 503 : 500).json({
             success: false,
-            message:
-                "Failed to generate learning recommendations."
+            message: isQuota
+                ? "AI learning plans have reached today's usage limit"
+                : isBusy
+                ? "The AI is busy right now. Please try again in a few minutes."
+                : "Failed to generate learning recommendations."
         });
     }
 }

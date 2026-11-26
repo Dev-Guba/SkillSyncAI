@@ -38,16 +38,23 @@ function safeCompare(value1, value2) {
 export async function requestPasswordReset(email) {
     const normalizedEmail = email.trim().toLowerCase();
 
+    // Only verified emails receive reset codes, so a mistyped or someone
+    // else's address can't be used to take over an account.
+    // Deactivated accounts don't get codes either.
     const user = await User.findOne({
+        where: { is_active: true },
         include: [{
             model: UserProfile,
-            where: { email: normalizedEmail },
+            where: {
+                email: normalizedEmail,
+                email_verified_at: { [sequelize.Sequelize.Op.ne]: null }
+            },
             required: true,
             attributes: ["email"]
         }]
     });
 
-    // Generic response for unknown emails
+    // Generic response for unknown or unverified emails
     if (!user) return;
 
     const otp = generateOTP();

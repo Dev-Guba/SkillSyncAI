@@ -1,14 +1,26 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, User } from "lucide-react";
+import { ArrowRight, AlertCircle, IdCard, Loader2, Mail, Phone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { API } from "../api/api.js";
+import { useAuth } from "../context/AuthContext.jsx";
 
 import Input from "../components/common/Input";
 import Select from "../components/common/Select";
 import Textarea from "../components/common/Textarea";
 import Button from "../components/common/Button";
-import logo from "../assets/logos/logo.png";
+import EmailVerifiedBadge from "../components/common/EmailVerifiedBadge";
+import LocationSelect from "../components/common/LocationSelect";
+import ProfilePhotoField from "../components/profile/ProfilePhotoField";
+import SchoolSelect from "../components/common/SchoolSelect";
+import { RESEARCH_SCHOOL } from "../data/cebuSchools";
+import {
+  normalizePhPhone,
+  formatPhPhone,
+  PHONE_EXAMPLE,
+  PHONE_ERROR,
+} from "../utils/phone";
+import AuthLayout from "../components/auth/AuthLayout";
 
 const GENDER_OPTIONS = [
   { value: "Male", label: "Male" },
@@ -17,10 +29,10 @@ const GENDER_OPTIONS = [
 ];
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_REGEX = /^\+?[\d\s\-()]{7,15}$/;
 
 export default function ProfileSetupPage() {
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
 
   const [programs, setPrograms] = useState([]);
   const [programsLoading, setProgramsLoading] = useState(true);
@@ -29,7 +41,7 @@ export default function ProfileSetupPage() {
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
-    school: "",
+    school: RESEARCH_SCHOOL, // fixed: the study runs only at UCLM
     email: "",
     phone_number: "",
     birth_date: "",
@@ -39,9 +51,51 @@ export default function ProfileSetupPage() {
     bio: "",
   });
 
+  // Optional photo or character (data URL), uploaded after the profile is created
+  const [picture, setPicture] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  // The email confirmed at sign-up (null for older accounts made before
+  // sign-up asked for an email).
+  const [verifiedEmail, setVerifiedEmail] = useState(null);
+
   useEffect(() => {
     fetchPrograms();
   }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    API.getEmailStatus()
+      .then((res) => {
+        if (!active) return;
+        const status = res.data?.data;
+        if (!status || status.has_profile) return;
+
+        if (status.email && !status.verified) {
+          // Signed up but hasn't entered the code yet
+          navigate("/verify-email?next=%2Fprofile-setup", { replace: true });
+          return;
+        }
+
+        if (status.verified && status.email) {
+          setVerifiedEmail(status.email);
+          setForm((prev) => (prev.email ? prev : { ...prev, email: status.email }));
+        }
+      })
+      .catch(() => {
+        // older accounts: just type the email as before
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [navigate]);
+
+  const emailIsVerified =
+    Boolean(verifiedEmail) &&
+    form.email.trim().toLowerCase() === verifiedEmail;
 
   const fetchPrograms = async () => {
     try {
@@ -85,10 +139,6 @@ export default function ProfileSetupPage() {
       nextErrors.last_name = "Last name is required.";
     }
 
-    if (!form.school.trim()) {
-      nextErrors.school = "Current school is required.";
-    }
-
     const trimmedEmail = form.email.trim();
     if (!trimmedEmail) {
       nextErrors.email = "Email is required.";
@@ -96,16 +146,10 @@ export default function ProfileSetupPage() {
       nextErrors.email = "Please enter a valid email address (e.g., student@school.edu).";
     }
 
-    const trimmedPhone = form.phone_number.trim();
-    const digitsOnly = trimmedPhone.replace(/\D/g, "");
-    if (!trimmedPhone) {
+    if (!form.phone_number.trim()) {
       nextErrors.phone_number = "Phone number is required.";
-    } else if (
-      !PHONE_REGEX.test(trimmedPhone) ||
-      digitsOnly.length < 7 ||
-      digitsOnly.length > 15
-    ) {
-      nextErrors.phone_number = "Please enter a valid phone number (e.g., 09171234567).";
+    } else if (!normalizePhPhone(form.phone_number)) {
+      nextErrors.phone_number = PHONE_ERROR;
     }
 
     if (!form.program_id) {
@@ -116,193 +160,265 @@ export default function ProfileSetupPage() {
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleContinue = async () => {
+  const handleContinue = async (e) => {
+    e?.preventDefault();
+    setFormError("");
+
     if (!validateForm()) {
+      setFormError("Please check the highlighted fields.");
       return;
     }
 
+    setSubmitting(true);
+
     try {
-      await API.createUserProfile({
+      const response = await API.createUserProfile({
         ...form,
         email: form.email.trim(),
-        phone_number: form.phone_number.trim(),
+        phone_number: normalizePhPhone(form.phone_number),
       });
+      const alreadyVerified = Boolean(response.data?.email_verified);
 
       localStorage.setItem(
         "selectedProgram",
         form.program_id
       );
 
-      navigate("/skills");
+      // Optional photo/character: uploaded now that the profile exists.
+      // A failed upload doesn't stop setup; it can be added on My Profile.
+      if (picture) {
+        try {
+          await API.updateProfilePicture(picture);
+        } catch (uploadError) {
+          console.error("Profile picture upload failed:", uploadError);
+        }
+      }
+
+      // Load the new profile so the email check applies everywhere
+      try {
+        await refreshUser();
+      } catch {
+        // the verify page loads its own status
+      }
+
+      // Email confirmed at sign-up: straight on. Otherwise a code was just
+      // sent to the address typed here.
+      navigate(alreadyVerified ? "/skills" : "/verify-email?next=%2Fskills");
     } catch (error) {
-      alert(
+      setFormError(
         error.response?.data?.message ||
-          "Failed to save profile."
+          "Couldn't save your profile. Please try again."
       );
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <section className="min-h-screen bg-white dark:bg-surface">
-      <div className="mx-auto max-w-3xl px-6 py-12">
-
-{/* Logo */}
-<div className="flex justify-center">
-  <img
-    src={logo}
-    alt="SkillSyncAI"
-    className="h-14 w-auto max-w-[220px] object-contain"
-  />
-</div>
-
-        {/* Progress */}
-        <div className="mt-8">
-          <p className="text-center text-sm font-semibold text-primary">
-            Step 2 of 3
-          </p>
-
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-border">
-            <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-[#5B4BFF] to-[#7A5CFF]" />
-          </div>
-        </div>
-
+    <AuthLayout mode="register" step={2}>
+      <motion.form
+        onSubmit={handleContinue}
+        noValidate
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="w-full max-w-[640px] rounded-[32px] border border-border bg-surface p-6 shadow-soft-lg sm:p-8"
+      >
         {/* Heading */}
-        <div className="mt-8 text-center">
-          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-violet-100">
-            <User className="h-10 w-10 text-primary" />
-          </div>
+        <div
+          className="flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-soft"
+          style={{ backgroundImage: "linear-gradient(135deg, #3B6FE0, #6E64DB)" }}
+        >
+          <IdCard className="h-7 w-7" />
+        </div>
+        <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-primary">
+          Step 3 of 4
+        </p>
+        <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-ink">
+          Complete your profile
+        </h1>
+        <p className="mt-2 text-sm text-muted">
+          This helps us match you with the right careers and skills.
+          Fields marked <span className="text-red-500">*</span> are required.
+        </p>
 
-          <h1 className="text-4xl font-bold text-ink">
-            Complete Your Profile
-          </h1>
-
-          <p className="mt-3 text-muted">
-            Tell us a little about yourself before we personalize your
-            experience.
+        {formError && (
+          <p
+            role="alert"
+            className="mt-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400"
+          >
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{formError}</span>
           </p>
+        )}
+
+        {/* Photo (optional) — the field has its own title and "Optional" note */}
+        <div className="mt-6 rounded-2xl bg-surface-alt px-4 py-5">
+          <ProfilePhotoField
+            value={picture}
+            onChange={setPicture}
+            firstName={form.first_name}
+            lastName={form.last_name}
+          />
         </div>
 
-        {/* Form */}
-        <motion.div
-          initial={{ opacity: 0, y: 25 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-10 rounded-3xl border border-border bg-surface p-8 shadow-lg"
-        >
-          {/* Name */}
+        {/* About you */}
+        <FormSection title="About you">
           <div className="grid gap-5 sm:grid-cols-2">
             <Input
-              label="First Name"
+              label={<Req>First name</Req>}
               value={form.first_name}
               onChange={handleChange("first_name")}
               error={errors.first_name}
+              autoComplete="given-name"
             />
-
             <Input
-              label="Last Name"
+              label={<Req>Last name</Req>}
               value={form.last_name}
               onChange={handleChange("last_name")}
               error={errors.last_name}
+              autoComplete="family-name"
             />
-          </div>
-
-          {/* Current School */}
-          <div className="mt-5">
             <Input
-              label="Current School"
-              placeholder="Enter your current school"
-              value={form.school}
-              onChange={handleChange("school")}
-              error={errors.school}
-            />
-          </div>
-
-          {/* Email */}
-          <div className="mt-5">
-            <Input
-              label="Email"
-              type="email"
-              placeholder="you@example.com"
-              value={form.email}
-              onChange={handleChange("email")}
-              error={errors.email}
-            />
-          </div>
-
-          {/* Phone Number */}
-          <div className="mt-5">
-            <Input
-              label="Phone Number"
-              type="tel"
-              placeholder="09171234567"
-              value={form.phone_number}
-              onChange={handleChange("phone_number")}
-              error={errors.phone_number}
-            />
-          </div>
-
-          {/* Birth Date & Gender */}
-          <div className="mt-5 grid gap-5 sm:grid-cols-2">
-            <Input
-              label="Birth Date"
+              label="Birth date"
               type="date"
               value={form.birth_date}
               onChange={handleChange("birth_date")}
             />
-
             <Select
               label="Gender"
               value={form.gender}
               onChange={handleChange("gender")}
               options={GENDER_OPTIONS}
+              placeholder="Select gender"
             />
           </div>
+        </FormSection>
 
-          {/* Program */}
-          <div className="mt-5">
+        {/* School & program */}
+        <FormSection title="School & program">
+          <div className="space-y-5">
+            <SchoolSelect label="Current school" />
             <Select
-              label="Program"
+              label={<Req>Program</Req>}
               value={form.program_id}
               onChange={handleChange("program_id")}
               options={PROGRAM_OPTIONS}
               disabled={programsLoading}
               error={errors.program_id}
-              placeholder={
-                programsLoading
-                  ? "Loading programs..."
-                  : "Select your program"
-              }
+              placeholder={programsLoading ? "Loading programs..." : "Select your program"}
             />
           </div>
+        </FormSection>
 
-          {/* Location */}
-          <div className="mt-5">
-            <Input
-              label="Location"
-              value={form.location}
-              onChange={handleChange("location")}
-            />
+        {/* Contact */}
+        <FormSection title="Contact & location">
+          <div className="space-y-5">
+            <div>
+              <Input
+                label={<Req>Email</Req>}
+                type="email"
+                icon={Mail}
+                placeholder="you@example.com"
+                value={form.email}
+                onChange={handleChange("email")}
+                error={errors.email}
+                autoComplete="email"
+              />
+              {verifiedEmail && !errors.email && (
+                <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted">
+                  <EmailVerifiedBadge verified={emailIsVerified} />
+                  <span>
+                    {emailIsVerified
+                      ? "Confirmed when you signed up."
+                      : "A different email needs a new code after you continue."}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <Input
+                label={<Req>Mobile number</Req>}
+                type="tel"
+                icon={Phone}
+                inputMode="tel"
+                autoComplete="tel-national"
+                placeholder={PHONE_EXAMPLE}
+                maxLength={20}
+                value={form.phone_number}
+                onChange={handleChange("phone_number")}
+                onBlur={() => {
+                  // Tidy a valid number into 0917 123 4567
+                  const normalized = normalizePhPhone(form.phone_number);
+                  if (normalized) {
+                    setForm((prev) => ({ ...prev, phone_number: formatPhPhone(normalized) }));
+                  }
+                }}
+                error={errors.phone_number}
+              />
+              {!errors.phone_number && (
+                <p className="mt-1.5 text-xs text-muted">
+                  Philippine mobile number (Globe, Smart, DITO, etc.).
+                </p>
+              )}
+            </div>
+
+            <LocationSelect value={form.location} onChange={handleChange("location")} />
           </div>
+        </FormSection>
 
-          {/* Bio */}
-          <div className="mt-5">
-            <Textarea
-              label="Bio"
-              placeholder="Tell us about yourself..."
-              value={form.bio}
-              onChange={handleChange("bio")}
-            />
-          </div>
+        {/* Bio */}
+        <FormSection title="Short bio" hint="Optional">
+          <Textarea
+            placeholder="e.g. 3rd-year BSIT student who enjoys building web apps."
+            value={form.bio}
+            onChange={handleChange("bio")}
+            maxLength={240}
+          />
+        </FormSection>
 
-          {/* Continue */}
-          <Button
-            onClick={handleContinue}
-            className="mt-8 w-full"
-            icon={ArrowRight}
-          >
-            Continue
-          </Button>
-        </motion.div>
+        {/* Continue */}
+        <Button
+          type="submit"
+          className="mt-8 w-full py-3"
+          icon={submitting ? undefined : ArrowRight}
+          disabled={submitting}
+        >
+          {submitting ? (
+            <span className="inline-flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" /> Saving your profile...
+            </span>
+          ) : (
+            "Continue"
+          )}
+        </Button>
+        <p className="mt-3 text-center text-xs text-muted">
+          Next: choose your skills. You can edit all of this later on My Profile.
+        </p>
+      </motion.form>
+    </AuthLayout>
+  );
+}
+
+// A titled group of fields, separated by a thin line
+function FormSection({ title, hint, children }) {
+  return (
+    <section className="mt-7 border-t border-border pt-6">
+      <div className="mb-4 flex items-baseline justify-between gap-2">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-ink">{title}</h2>
+        {hint && <span className="text-xs text-muted">{hint}</span>}
       </div>
+      {children}
     </section>
+  );
+}
+
+// Field label with a red required marker
+function Req({ children }) {
+  return (
+    <>
+      {children} <span className="text-red-500" aria-hidden="true">*</span>
+    </>
   );
 }

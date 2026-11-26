@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Query
 from pydantic import BaseModel
 
-from skill_matching.matcher import calculate_skill_gap
+from skill_matching.matcher import calculate_skill_gap, curriculum_market_similarity
 from recommendation.generator import generate_recommendation
 
 # Intenational
@@ -29,6 +29,9 @@ from skill_matching.skill_extractor import extract_skills
 # Trend Forecasting
 from trend_model.forecaster import forecast_skill_demand
 
+# Emerging skills: skill-like terms in job postings that aren't in the catalog
+from skill_matching.skill_discovery import discover_candidate_skills
+
 app = FastAPI()
 
 class Career(BaseModel):
@@ -51,6 +54,19 @@ class BatchSkillExtractionRequest(BaseModel):
 class SkillForecastRequest(BaseModel):
     history: list[dict]
     periods: int = 36
+
+class CurriculumSimilarityRequest(BaseModel):
+    program_skills: list[str]
+    # {skill name: number of postings mentioning it}
+    market_demand: dict[str, int]
+
+class SkillDiscoveryRequest(BaseModel):
+    # [{"id": job_id, "company": "...", "description": "..."}]
+    jobs: list[dict]
+    skill_dictionary: list[str]
+    min_jobs: int = 2
+    min_companies: int = 2
+    limit: int = 100
 
 
 @app.get("/")
@@ -193,6 +209,32 @@ def recommend_learning(
             "message": str(e)
         }
 
+@app.post("/curriculum-similarity")
+def curriculum_similarity(request: CurriculumSimilarityRequest):
+    return {
+        "success": True,
+        "cosine_similarity": curriculum_market_similarity(
+            request.program_skills,
+            request.market_demand,
+        ),
+    }
+
+@app.post("/discover-skills")
+def discover_skills(request: SkillDiscoveryRequest):
+    candidates = discover_candidate_skills(
+        request.jobs,
+        request.skill_dictionary,
+        min_jobs=request.min_jobs,
+        min_companies=request.min_companies,
+        limit=request.limit,
+    )
+
+    return {
+        "success": True,
+        "count": len(candidates),
+        "candidates": candidates,
+    }
+
 @app.post("/extract-job-skills")
 def extract_job_skills(
     request: BatchSkillExtractionRequest
@@ -201,13 +243,12 @@ def extract_job_skills(
 
     for job in request.jobs:
 
-        description = job.get(
-            "description",
-            ""
-        )
+        # Titles often name the skill ("Flutter Developer"), and JobStreet
+        # descriptions are only short teasers, so read both.
+        text = f"{job.get('title') or ''}. {job.get('description') or ''}"
 
         skills = extract_skills(
-            description,
+            text,
             request.skill_dictionary
         )
 

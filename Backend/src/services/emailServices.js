@@ -1,13 +1,14 @@
 import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-    }
+  host: process.env.SMTP_HOST,
+  port: 587,
+  secure: false,
+  requireTLS: true,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
 });
 
 function escapeHtml(value) {
@@ -65,18 +66,38 @@ export async function sendVerificationEmail(email, code, expiresInMinutes) {
 }
 
 export async function sendOTPEmail(email, otp) {
-    return transporter.sendMail({
-        from: `"SkillSyncAI" <${process.env.SMTP_USER}>`,
-        to: email,
-        subject: "Password Reset Verification",
-        html: `
-            <div style="font-family: Arial;">
-                <h2>SkillSyncAI</h2>
-                <p>You requested to reset your password.</p>
-                <h1>${otp}</h1>
-                <p>Your verification code expires in 10 minutes.</p>
-                <p>If you did not request this, ignore this email.</p>
-            </div>
-        `
-    });
+  return transporter.sendMail({
+    from: `"SkillSyncAI" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject: "Password Reset Verification",
+    text: `
+      You requested to reset your SkillSyncAI password.
+
+      Your verification code is: ${otp}
+
+      Your code expires in 10 minutes.
+
+      If you did not request this, ignore this email.
+    `,
+    html: `
+      <div style="font-family: Arial;">
+        <h2>SkillSyncAI</h2>
+        <p>You requested to reset your password.</p>
+        <h1>${otp}</h1>
+        <p>Your verification code expires in 10 minutes.</p>
+        <p>If you did not request this, ignore this email.</p>
+      </div>
+    `,
+  });
+}
+
+export async function testEmailConnection() {
+  try {
+    await transporter.verify();
+    console.log("SMTP connection successful!");
+    return true;
+  } catch (error) {
+    console.error("SMTP connection failed:", error);
+    return false;
+  }
 }
