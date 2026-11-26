@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@dicebear/core": "^11.0.0",
+    "@dicebear/styles": "^11.0.0",
     "@icons-pack/react-simple-icons": "^13.13.0",
     "@tailwindcss/vite": "^4.3.2",
     "axios": "^1.18.1",
